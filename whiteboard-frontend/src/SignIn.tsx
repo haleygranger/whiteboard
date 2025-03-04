@@ -9,7 +9,7 @@ function SignIn() {
 
   return (
     <div>
-      <h1>Welcome to the Whiteboard</h1>
+      <h1>Welcome Screen</h1>
       <button onClick={joinAsGuest}>Continue as Guest</button>
       <button>Sign In</button> {/* We'll handle this later */}
     </div>

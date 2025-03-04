@@ -1,5 +1,5 @@
 function Whiteboard() {
-    return <h1>Welcome to the Whiteboard!</h1>;
+    return <h1>Whiteboard Page</h1>;
   }
   
   export default Whiteboard;
