@@ -4,7 +4,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import SignIn from "./SignIn";
 import Whiteboard from "./Whiteboard";
 
-ReactDOM.createRoot(document.getElementById("root")).render(
+const container = document.getElementById('root')!;
+ReactDOM.createRoot(container).render(
   <React.StrictMode>
     <BrowserRouter>
       <Routes>
