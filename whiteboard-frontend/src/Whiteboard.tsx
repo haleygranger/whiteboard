@@ -1,13 +1,13 @@
 import React, { useState } from "react";
-import TypingComponent from "./TypingComponent";
+import TypingComponent from "./TypingComponent"; // Import TypingComponent
 
-const Whiteboard = () => {
-  const [sessionId, setSessionId] = useState("session123"); // Dummy sessionId
-  const [userName, setUserName] = useState("user123"); // Dummy username
+const Whiteboard: React.FC = () => {
+  const [sessionId] = useState("session123");
+  const [userName] = useState("user123");
 
   return (
     <div>
-      <h2>Welcome to the Whiteboard</h2>
+      <h1>Whiteboard</h1>
       <TypingComponent sessionId={sessionId} userName={userName} />
     </div>
   );
