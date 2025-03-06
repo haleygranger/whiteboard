@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import TypingComponent from "./TypingComponent"; // Import TypingComponent
 
 const Whiteboard: React.FC = () => {
-  const [sessionId] = useState("1738967918684");
+  const [sessionId] = useState("session123");
   const [userName] = useState("user123");
 
   return (
