@@ -46,7 +46,6 @@ const TypingComponent: React.FC<TypingComponentProps> = ({ sessionId, userName }
         JSON.stringify({
           sessionId: sessionId,
           typingUsers: [userName], // Send the current user's name
-          text: newMessage,
         })
       );
     }
