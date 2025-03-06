@@ -3,6 +3,8 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import SignIn from "./SignIn";
 import Whiteboard from "./Whiteboard";
+import './App.css'
+
 
 const container = document.getElementById('root')!;
 ReactDOM.createRoot(container).render(

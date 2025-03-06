@@ -15,8 +15,7 @@ function SignIn() {
     <div>
       <h1>Welcome Screen</h1>
       <button onClick={joinAsGuest}>Continue as Guest</button>
-      <button onClick={handleSignIn}
-        >Sign In</button>
+      <button onClick={handleSignIn}>Sign In</button>
     </div>
   );
 }
