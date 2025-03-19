@@ -5,10 +5,15 @@
   box-sizing: border-box;
 }
 
-body {
+html, body {
   font-family: Arial, sans-serif;
   background-color: #f4f4f9;
-  color: #333
+  color: #333;
+  display: flex;
+}
+
+h1{
+  padding: 10px;
 }
 
 .sign-in-container{
@@ -18,6 +23,26 @@ body {
   height: 100vh;
   background-color: #fff;
   flex-direction: column;
+}
+
+.draw-area {
+  width: 1280px;
+  height: 720px;
+  border: 2px solid #808080;
+  position: relative;
+  background-color: white;
+}
+
+.Menu {
+  width: 650px;
+  height: 50px;
+  display: flex;
+  justify-content: space-evenly;
+  border-radius: 5px;
+  align-items: center;
+  background-color: #a3a3a32d;
+  margin: auto;
+  margin-top: 10px;
 }
 
 button {
@@ -51,5 +76,3 @@ button:hover{
   border: 1px solid #ccc;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1)
 }
-
-/* I dont know man, I am learning this as I go */
