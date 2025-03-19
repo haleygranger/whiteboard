@@ -51,6 +51,18 @@ const TypingComponent: React.FC<TypingComponentProps> = ({ sessionId, userName }
     }
   };
 
+  // Function to generate a shareable URL and copy it to clipboard
+  const handleShareClick = () => {
+    const shareableUrl = `https://main.dbiwmhwrvdu84.amplifyapp.com/whiteboard?sessionId=${sessionId}`;
+    
+    // Copy the URL to the clipboard
+    navigator.clipboard.writeText(shareableUrl).then(() => {
+      alert('Session URL copied to clipboard.');
+    }).catch(err => {
+      console.error('Failed to copy URL: ', err);
+    });
+  };
+
   return (
     <div>
       <div>
@@ -72,6 +84,8 @@ const TypingComponent: React.FC<TypingComponentProps> = ({ sessionId, userName }
           <p>No one is typing.</p>
         )}
       </div>
+       {/* Share Button */}
+      <button onClick={handleShareClick}>Share</button>
     </div>
   );
 };
