@@ -7,10 +7,12 @@ interface MouseEventWithOffset extends React.MouseEvent<HTMLCanvasElement> {
     nativeEvent: MouseEvent;
 }
 
+/*
 interface WhiteboardProps{
     sessionId: string;
     userName: string;
 }
+*/
 
 function WhiteboardComponent() {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
