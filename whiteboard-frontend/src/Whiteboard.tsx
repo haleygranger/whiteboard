@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import TypingComponent from "./TypingComponent"; // Import TypingComponent
+//import TypingComponent from "./TypingComponent"; // Import TypingComponent
 import WhiteboardComponent from "./WhiteboardComponent";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "react-oidc-context";
@@ -45,9 +45,7 @@ const Whiteboard: React.FC = () => {
 
   return (
     <div>      
-      <WhiteboardComponent></WhiteboardComponent>
-      <h1>Whiteboard</h1>
-      <TypingComponent sessionId={sessionId} userName={userId} />
+      <WhiteboardComponent sessionId={sessionId} userId={userId}></WhiteboardComponent>
     </div>
   );
 };

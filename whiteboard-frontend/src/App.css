@@ -12,8 +12,38 @@ html, body {
   display: flex;
 }
 
+.Menu {
+  width: 650px;
+  height: 70px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 10px;
+  background-color: #f5f5f5;
+  padding: 0 25px;
+  margin: auto;
+  margin-top: 15px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
 h1{
   padding: 10px;
+}
+
+button {
+  padding: 10px 20px;
+  margin: 10px;
+  border: none;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+  font-size: 16px;
+  border-radius: 5px;
+  transition: background-color 0.3s ease;
+}
+
+button:hover{
+  background-color: #0056b3;
 }
 
 .sign-in-container{
@@ -33,32 +63,68 @@ h1{
   background-color: white;
 }
 
-.Menu {
-  width: 650px;
-  height: 50px;
+/* Grouping for color picker */
+.color-picker {
   display: flex;
-  justify-content: space-evenly;
-  border-radius: 5px;
   align-items: center;
-  background-color: #a3a3a32d;
-  margin: auto;
-  margin-top: 10px;
+  gap: 12px;
+  font-weight: 500;
 }
 
-button {
-  padding: 10px 20px;
-  margin: 10px;
-  border: none;
-  background-color: #007bff;
-  color: white;
+/* Grouping for brush size */
+.size-picker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 500;
+}
+
+/* Circle buttons */
+.circle-button {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  border: 2px solid #444;
+  background-color: #666;
   cursor: pointer;
-  font-size: 16px;
-  border-radius: 5px;
-  transition: background-color 0.3s ease;
+  transition: transform 0.2s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+  margin: 0 5px;
+  padding: 0;
 }
 
-button:hover{
-  background-color: #0056b3;
+.circle-button:hover {
+  transform: scale(1.15);
+  background-color: #888;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* Add spacing between the buttons container */
+.size-buttons {
+  display: flex;
+  gap: 8px;
+  padding: 4px;
+}
+
+input[type="color"] {
+  width: 36px;
+  height: 36px;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease;
+}
+
+input[type="color"]:hover {
+  transform: scale(1.1);
+}
+
+/* Optional typography touch */
+label {
+  font-size: 16px;
+  color: #333;
 }
 
 .whiteboard-container{
@@ -75,4 +141,20 @@ button:hover{
   background-color: white;
   border: 1px solid #ccc;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1)
+}
+
+.eraser-button {
+  padding: 8px 16px;
+  border: none;
+  background-color: #ff4d4d;
+  color: white;
+  font-weight: bold;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.eraser-button:hover {
+  background-color: #cc0000;
+  transform: scale(1.05);
 }

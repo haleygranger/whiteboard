@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 //import { useAuth } from "react-oidc-context";
+import "./App.css";
 
 function SignIn() {
   const navigate = useNavigate();
@@ -7,6 +8,7 @@ function SignIn() {
 
   const joinAsGuest = async () => {
     const sessionId = await createConnection();
+    // const connectionId = 
     navigate(`/whiteboard?sessionId=${sessionId}`); // Redirect to the whiteboard page
   };
 
