@@ -17,6 +17,8 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
     const [isDrawing, setIsDrawing] = useState<boolean>(false);
     const [lineWidth, setLineWidth] = useState<number>(5);
     const [lineColor, setLineColor] = useState<string>("black");
+    const [cursorPosition, setCursorPosition] = useState<{x: number, y: number} | null>(null);   
+    const[path, setPath] = useState<{x:number, y:number}[]>([]);
 
     // Initialization when the component mounts for the first time
     useEffect(() => {
@@ -38,7 +40,10 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
         if (ctxRef.current) {
             ctxRef.current.beginPath();
             ctxRef.current.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
+            
+            
         }
+        updateCursor(e);
         setIsDrawing(true);
     };
 
@@ -48,6 +53,19 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
             ctxRef.current.closePath();
         }
         setIsDrawing(false);
+
+        if (ws && path.length > 0) {
+            ws.send(JSON.stringify({
+                sessionId,
+                drawingData: {
+                    userId,
+                    path,
+                    lineWidth,
+                    lineColor,
+                },
+            }));
+            setPath([]); // Clear after sending
+        }
     };
 
     // Function for drawing
@@ -55,25 +73,22 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
         if (!isDrawing || !ctxRef.current) {
             return;
         }
-        ctxRef.current.lineTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
+        const point = { x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY };
+        ctxRef.current.lineTo(point.x, point.y);
         ctxRef.current.stroke();
+        updateCursor(e);
+        setPath((prev) => [...prev, point]);
 
         // Send drawing data over WebSocket
-        if (ws) {
-            ws.send(
-                JSON.stringify({
-                    sessionId: sessionId,
-                    drawingData: {
-                        userId,
-                        x: e.nativeEvent.offsetX,
-                        y: e.nativeEvent.offsetY,
-                        lineWidth,
-                        lineColor,
-                    },
-                })
-            );
-        }
+/*
+        TO DO: send collection of drawing events over websocket to parse, instead of each drawing event.
+                Perhaps the path?
+*/
     };
+    
+    const updateCursor = (e:MouseEventWithOffset) => {
+        setCursorPosition({ x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY });
+    }
 
     const [ws, setWs] = useState<WebSocket | null>(null);
 
@@ -89,7 +104,6 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
         webSocket.onmessage = (event) => {
             const receivedData = JSON.parse(event.data);
             console.log(receivedData);
-            // You can handle drawing updates from other users here
         };
 
         setWs(webSocket);
@@ -97,6 +111,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
         return () => {
             // Clean up WebSocket connection on component unmount
             webSocket.close();
+            webSocket.onclose = () => console.log("WebSocket Closed"); // Debugging - is it closing prematurely?
         };
     }, [sessionId]);
 
@@ -107,6 +122,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
                     setLineColor={setLineColor}
                     setLineWidth={setLineWidth}
                     sessionId={sessionId}
+                    
                 />
                 <canvas
                     onMouseDown={startDrawing}
@@ -116,6 +132,17 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
                     width={1280}
                     height={720}
                 />
+                {isDrawing && cursorPosition && (
+                    <div
+                        className="cursor"
+                        style={{
+                            left: `${cursorPosition.x}px`,
+                            top: `${cursorPosition.y+80}px`, // Adjusting for the offset on canvas - Hard Coded probably should fix
+                        }}
+                    >
+                        {userId}
+                    </div>
+                )}
             </div>
         </div>
     );
