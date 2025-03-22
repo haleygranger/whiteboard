@@ -14,7 +14,7 @@ const Whiteboard: React.FC = () => {
   const auth = useAuth();
 
   const [sessionId, setSessionId] = useState("0");
-  const [userId, setUserId] = useState("0");
+  const [connectionId, setConnectionId] = useState("0");
 
   // Only run once to handle session ID from URL or localStorage
   useEffect(() => {
@@ -30,22 +30,25 @@ const Whiteboard: React.FC = () => {
   }, [params]);
 
   // UseEffect to set guest userId or auth userId
+  /*
+    TO DO: Get this working
+  */
   useEffect(() => {
     if (auth.isAuthenticated && auth.user) {
       const cognitoUserId = auth.user.profile.sub || "unknown";
-      setUserId(cognitoUserId);
+      setConnectionId(cognitoUserId);
     } else {
       const random = getRandomNumber(1, 99999999).toString();
-      setUserId(random);
+      setConnectionId(random);
     }
   }, [auth]);
 
   console.log("sessionId from Whiteboard.tsx: " + sessionId);
-  console.log("userId from Whiteboard.tsx: " + userId);
+  console.log("connectionId from Whiteboard.tsx: " + connectionId);
 
   return (
     <div>      
-      <WhiteboardComponent sessionId={sessionId} userId={userId}></WhiteboardComponent>
+      <WhiteboardComponent sessionId={sessionId} connectionId={connectionId}></WhiteboardComponent>
     </div>
   );
 };

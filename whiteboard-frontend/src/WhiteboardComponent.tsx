@@ -8,10 +8,10 @@ interface MouseEventWithOffset extends React.MouseEvent<HTMLCanvasElement> {
 }
 interface WhiteboardProps{
     sessionId: string;
-    userId: string;
+    connectionId: string;
 }
 
-const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) => {
+const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, connectionId }) => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
     const [isDrawing, setIsDrawing] = useState<boolean>(false);
@@ -54,11 +54,13 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
         }
         setIsDrawing(false);
 
+        console.log("connectionId from WhiteboardComponent.tsx: " + connectionId);
+
         if (ws && path.length > 0) {
             ws.send(JSON.stringify({
                 sessionId,
                 drawingData: {
-                    userId,
+                    connectionId,
                     path,
                     lineWidth,
                     lineColor,
@@ -140,7 +142,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
                             top: `${cursorPosition.y+80}px`, // Adjusting for the offset on canvas - Hard Coded probably should fix
                         }}
                     >
-                        {userId}
+                        {connectionId}
                     </div>
                 )}
             </div>
