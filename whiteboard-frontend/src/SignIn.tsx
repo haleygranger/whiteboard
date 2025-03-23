@@ -8,7 +8,6 @@ function SignIn() {
 
   const joinAsGuest = async () => {
     const sessionId = await createConnection();
-    // const connectionId = 
     navigate(`/whiteboard?sessionId=${sessionId}`); // Redirect to the whiteboard page
   };
 

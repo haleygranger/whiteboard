@@ -8,10 +8,10 @@ interface MouseEventWithOffset extends React.MouseEvent<HTMLCanvasElement> {
 }
 interface WhiteboardProps{
     sessionId: string;
-    connectionId: string;
+    userId: string;
 }
 
-const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, connectionId }) => {
+const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
     const [isDrawing, setIsDrawing] = useState<boolean>(false);
@@ -54,13 +54,13 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, connectionI
         }
         setIsDrawing(false);
 
-        console.log("connectionId from WhiteboardComponent.tsx: " + connectionId);
+        console.log("userId from WhiteboardComponent.tsx: " + userId);
 
         if (ws && path.length > 0) {
             ws.send(JSON.stringify({
                 sessionId,
                 drawingData: {
-                    connectionId,
+                    userId,
                     path,
                     lineWidth,
                     lineColor,
@@ -84,7 +84,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, connectionI
         // Send drawing data over WebSocket
 /*
         TO DO: send collection of drawing events over websocket to parse, instead of each drawing event.
-                Perhaps the path?
+                Perhaps the path? Or evey couple strokes?
 */
     };
     
@@ -95,8 +95,14 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, connectionI
     const [ws, setWs] = useState<WebSocket | null>(null);
 
     useEffect(() => {
+        // Build query string
+        const queryParams = new URLSearchParams({
+            sessionId: sessionId,
+            userId: userId
+        });
+
         // Connect to WebSocket when the component mounts
-        const webSocket = new WebSocket('wss://it1jqs927h.execute-api.us-east-2.amazonaws.com/production/');
+        const webSocket = new WebSocket('wss://it1jqs927h.execute-api.us-east-2.amazonaws.com/production?${queryParams.toString()}');
     
         webSocket.onopen = () => {
             console.log('WebSocket Connected');
@@ -142,7 +148,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, connectionI
                             top: `${cursorPosition.y+80}px`, // Adjusting for the offset on canvas - Hard Coded probably should fix
                         }}
                     >
-                        {connectionId}
+                        {userId}
                     </div>
                 )}
             </div>
