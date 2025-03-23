@@ -102,7 +102,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
         });
         console.log("queryParams: " + queryParams);
         // Connect to WebSocket when the component mounts
-        const webSocket = new WebSocket('wss://it1jqs927h.execute-api.us-east-2.amazonaws.com/production?${queryParams.toString()}');
+        const webSocket = new WebSocket(`wss://it1jqs927h.execute-api.us-east-2.amazonaws.com/production?${queryParams.toString()}`);
     
         webSocket.onopen = () => {
             console.log('WebSocket Connected');
