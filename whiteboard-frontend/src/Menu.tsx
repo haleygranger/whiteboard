@@ -20,7 +20,7 @@ const Menu: React.FC<MenuProps> = ({ setLineColor, setLineWidth, sessionId}) => 
 
     // Function to generate a shareable URL and copy it to clipboard
     const handleShareClick = () => {
-        const shareableUrl = `https://main.d1iux10hnbuc3b.amplifyapp.com/whiteboard?sessionId=${sessionId}`;
+        const shareableUrl = `https://main.d3nwftw9t1phgg.amplifyapp.com/whiteboard?sessionId=${sessionId}`;
         
         // Copy the URL to the clipboard
         navigator.clipboard.writeText(shareableUrl).then(() => {

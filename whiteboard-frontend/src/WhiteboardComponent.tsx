@@ -73,6 +73,11 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
                     },
                 })
             );
+            console.log("Sent data: "+ sessionId + " drawingData: " + 
+                    userId,
+                    path,
+                    lineWidth,
+                    lineColor)
             setPath([]); // Clear after sending
         }
     };
@@ -132,6 +137,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
                 console.log("Received WebSocket message:", data);
 
                 if (data.sessionId && data.drawingData) {
+                    console.log("Updating Whiteboard.")
                     updateCanvasFromServer([data.drawingData]);
                 }
             } catch (error) {
