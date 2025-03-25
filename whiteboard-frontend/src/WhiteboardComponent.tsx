@@ -6,9 +6,17 @@ import "./App.css";
 interface MouseEventWithOffset extends React.MouseEvent<HTMLCanvasElement> {
     nativeEvent: MouseEvent;
 }
-interface WhiteboardProps{
+
+interface WhiteboardProps {
     sessionId: string;
     userId: string;
+}
+
+interface DrawingData{
+    userId: string;
+    path: {x:number; y:number}[];
+    lineWidth: number;
+    lineColor: string;
 }
 
 const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) => {
@@ -17,10 +25,11 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
     const [isDrawing, setIsDrawing] = useState<boolean>(false);
     const [lineWidth, setLineWidth] = useState<number>(5);
     const [lineColor, setLineColor] = useState<string>("black");
-    const [cursorPosition, setCursorPosition] = useState<{x: number, y: number} | null>(null);   
-    const[path, setPath] = useState<{x:number, y:number}[]>([]);
+    const [cursorPosition, setCursorPosition] = useState<{ x: number; y: number } | null>(null);
+    const [path, setPath] = useState<{ x: number; y: number }[]>([]);
+    const [ws, setWs] = useState<WebSocket | null>(null);
 
-    // Initialization when the component mounts for the first time
+    // Initialization when the component mounts
     useEffect(() => {
         const canvas = canvasRef.current;
         if (canvas) {
@@ -35,42 +44,39 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
         }
     }, [lineColor, lineWidth]);
 
-    // Function for starting the drawing
     const startDrawing = (e: MouseEventWithOffset): void => {
         if (ctxRef.current) {
             ctxRef.current.beginPath();
             ctxRef.current.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
-            
-            
         }
         updateCursor(e);
         setIsDrawing(true);
     };
 
-    // Function for ending the drawing
     const endDrawing = (): void => {
         if (ctxRef.current) {
             ctxRef.current.closePath();
         }
         setIsDrawing(false);
 
-        console.log("userId from WhiteboardComponent.tsx: " + userId);
+        console.log("userId from WhiteboardComponent.tsx:", userId);
 
         if (ws && path.length > 0) {
-            ws.send(JSON.stringify({
-                sessionId,
-                drawingData: {
-                    userId,
-                    path,
-                    lineWidth,
-                    lineColor,
-                },
-            }));
+            ws.send(
+                JSON.stringify({
+                    sessionId,
+                    drawingData: {
+                        userId,
+                        path,
+                        lineWidth,
+                        lineColor,
+                    },
+                })
+            );
             setPath([]); // Clear after sending
         }
     };
 
-    // Function for drawing
     const draw = (e: MouseEventWithOffset): void => {
         if (!isDrawing || !ctxRef.current) {
             return;
@@ -80,72 +86,77 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
         ctxRef.current.stroke();
         updateCursor(e);
         setPath((prev) => [...prev, point]);
-
-        // Send drawing data over WebSocket
-/*
-        TO DO: send collection of drawing events over websocket to parse, instead of each drawing event.
-                Perhaps the path? Or evey couple strokes?
-*/
     };
-    
-    const updateCursor = (e:MouseEventWithOffset) => {
-        setCursorPosition({ x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY });
-    }
 
-    const [ws, setWs] = useState<WebSocket | null>(null);
+    const updateCursor = (e: MouseEventWithOffset) => {
+        setCursorPosition({ x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY });
+    };
+
+    const updateCanvasFromServer = (drawingUsers: DrawingData[]) => {
+        const ctx = canvasRef.current?.getContext("2d");
+        if (!ctx) return;
+
+        drawingUsers.forEach((userStroke) => {
+            if (!userStroke.path) return;
+
+            ctx.strokeStyle = userStroke.lineColor || "black";
+            ctx.lineWidth = userStroke.lineWidth || 2;
+            ctx.beginPath();
+
+            userStroke.path.forEach((point: { x: number; y: number }, index: number) => {
+                if (index === 0) {
+                    ctx.moveTo(point.x, point.y);
+                } else {
+                    ctx.lineTo(point.x, point.y);
+                }
+            });
+            ctx.stroke();
+        });
+    };
 
     useEffect(() => {
-        // Build query string
         const queryParams = new URLSearchParams({
-            sessionId: sessionId,
-            userId: userId
+            sessionId,
+            userId,
         });
-        console.log("queryParams: " + queryParams);
-        // Connect to WebSocket when the component mounts
-        const webSocket = new WebSocket(`wss://it1jqs927h.execute-api.us-east-2.amazonaws.com/production?${queryParams.toString()}`);
-    
+
+        const webSocket = new WebSocket(`wss://it1jqs927h.execute-api.us-east-2.amazonaws.com/production?${queryParams}`);
+
         webSocket.onopen = () => {
-            console.log('WebSocket Connected');
+            console.log("WebSocket Connected");
         };
-    
-        // Receive messages and update drawing
+
         webSocket.onmessage = (event) => {
-            const receivedData = JSON.parse(event.data);
-            console.log(receivedData);
+            try {
+                const data = JSON.parse(event.data);
+                console.log("Received WebSocket message:", data);
+
+                if (data.sessionId && data.drawingData) {
+                    updateCanvasFromServer([data.drawingData]);
+                }
+            } catch (error) {
+                console.error("Error parsing WebSocket message:", error);
+            }
         };
 
         setWs(webSocket);
 
         return () => {
-            // Clean up WebSocket connection on component unmount
             webSocket.close();
-            webSocket.onclose = () => console.log("WebSocket Closed"); // Debugging - is it closing prematurely?
         };
-    }, [sessionId]);
+    }, [sessionId, userId]);
 
     return (
         <div className="App">
             <div className="draw-area">
-                <Menu
-                    setLineColor={setLineColor}
-                    setLineWidth={setLineWidth}
-                    sessionId={sessionId}
-                    
-                />
-                <canvas
-                    onMouseDown={startDrawing}
-                    onMouseUp={endDrawing}
-                    onMouseMove={draw}
-                    ref={canvasRef}
-                    width={1280}
-                    height={720}
-                />
+                <Menu setLineColor={setLineColor} setLineWidth={setLineWidth} sessionId={sessionId} />
+                <canvas onMouseDown={startDrawing} onMouseUp={endDrawing} onMouseMove={draw} ref={canvasRef} width={1280} height={720} />
                 {isDrawing && cursorPosition && (
                     <div
                         className="cursor"
                         style={{
                             left: `${cursorPosition.x}px`,
-                            top: `${cursorPosition.y+80}px`, // Adjusting for the offset on canvas - Hard Coded probably should fix
+                            top: `${cursorPosition.y + 80}px`,
                         }}
                     >
                         {userId}
@@ -154,6 +165,6 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
             </div>
         </div>
     );
-}
+};
 
 export default WhiteboardComponent;
