@@ -7,14 +7,18 @@ interface MouseEventWithOffset extends React.MouseEvent<HTMLCanvasElement> {
     nativeEvent: MouseEvent;
 }
 
+interface TouchEventWithOffset extends React.TouchEvent<HTMLCanvasElement> {
+    nativeEvent: TouchEvent;
+}
+
 interface WhiteboardProps {
     sessionId: string;
     userId: string;
 }
 
-interface DrawingData{
+interface DrawingData {
     userId: string;
-    path: {x:number; y:number}[];
+    path: { x: number; y: number }[];
     lineWidth: number;
     lineColor: string;
 }
@@ -23,7 +27,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
     const [isDrawing, setIsDrawing] = useState<boolean>(false);
-    const [lineWidth, setLineWidth] = useState<number>(5);
+    const [lineWidth, setLineWidth] = useState<number>(8);
     const [lineColor, setLineColor] = useState<string>("black");
     const [cursorPosition, setCursorPosition] = useState<{ x: number; y: number } | null>(null);
     const [path, setPath] = useState<{ x: number; y: number }[]>([]);
@@ -44,12 +48,13 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
         }
     }, [lineColor, lineWidth]);
 
-    const startDrawing = (e: MouseEventWithOffset): void => {
+    const startDrawing = (e: MouseEventWithOffset | TouchEventWithOffset): void => {
+        const offset = getOffset(e);
         if (ctxRef.current) {
             ctxRef.current.beginPath();
-            ctxRef.current.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
+            ctxRef.current.moveTo(offset.x, offset.y);
         }
-        updateCursor(e);
+        updateCursor(offset);
         setIsDrawing(true);
     };
 
@@ -58,8 +63,6 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
             ctxRef.current.closePath();
         }
         setIsDrawing(false);
-
-        console.log("userId from WhiteboardComponent.tsx:", userId);
 
         if (ws && path.length > 0) {
             ws.send(
@@ -73,45 +76,53 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
                     },
                 })
             );
-            console.log("Sent data: "+ sessionId + " drawingData: " + 
-                    userId,
-                    path,
-                    lineWidth,
-                    lineColor)
             setPath([]); // Clear after sending
         }
     };
 
-    const draw = (e: MouseEventWithOffset): void => {
+    const draw = (e: MouseEventWithOffset | TouchEventWithOffset): void => {
         if (!isDrawing || !ctxRef.current) {
             return;
         }
-        const point = { x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY };
-        ctxRef.current.lineTo(point.x, point.y);
+        const offset = getOffset(e);
+        ctxRef.current.lineTo(offset.x, offset.y);
         ctxRef.current.stroke();
-        updateCursor(e);
-        setPath((prev) => [...prev, point]);
+        updateCursor(offset);
+        setPath((prev) => [...prev, { x: offset.x, y: offset.y }]);
     };
 
-    const updateCursor = (e: MouseEventWithOffset) => {
-        setCursorPosition({ x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY });
+    const getOffset = (e: MouseEventWithOffset | TouchEventWithOffset) => {
+        const canvas = canvasRef.current;
+        if (!canvas) return { x: 0, y: 0 };
+
+        if ("touches" in e.nativeEvent) {
+            const touch = e.nativeEvent.touches[0];
+            return {
+                x: touch.clientX - canvas.offsetLeft,
+                y: touch.clientY - canvas.offsetTop,
+            };
+        } else {
+            return {
+                x: e.nativeEvent.offsetX,
+                y: e.nativeEvent.offsetY,
+            };
+        }
+    };
+
+    const updateCursor = (position: { x: number; y: number }) => {
+        setCursorPosition(position);
     };
 
     const updateCanvasFromServer = (drawingUsers: DrawingData[]) => {
         const ctx = canvasRef.current?.getContext("2d");
         if (!ctx) return;
-    
-        // Loop through each user drawing data
+
         drawingUsers.forEach((userStroke) => {
-            // Log the drawing user data
-            console.log("User stroke data:", userStroke);
-    
-            // Ensure 'path' exists and is an array
             if (userStroke.path && Array.isArray(userStroke.path)) {
                 ctx.strokeStyle = userStroke.lineColor || "black";
                 ctx.lineWidth = userStroke.lineWidth || 2;
                 ctx.beginPath();
-    
+
                 userStroke.path.forEach((point: { x: number; y: number }, index: number) => {
                     if (index === 0) {
                         ctx.moveTo(point.x, point.y);
@@ -124,9 +135,17 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
                 console.error("Invalid path data:", userStroke.path);
             }
         });
-    };    
-    
+    };
 
+    const handleFullErase = () => {
+        if (canvasRef.current && ctxRef.current) {
+            const ctx = ctxRef.current;
+            ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+            setPath([]);
+        }
+    };
+
+    // WebSocket Stuff
     useEffect(() => {
         const queryParams = new URLSearchParams({
             sessionId,
@@ -143,11 +162,9 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
             try {
                 const data = JSON.parse(event.data);
                 console.log("Received WebSocket message:", data);
-        
-                // Ensure the message contains the expected fields
+
                 if (data && Array.isArray(data.path)) {
-                    console.log("Updating Whiteboard.");
-                    updateCanvasFromServer([data]); // Pass the entire data object
+                    updateCanvasFromServer([data]);
                 } else {
                     console.error("Invalid WebSocket message format:", data);
                 }
@@ -155,7 +172,6 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
                 console.error("Error parsing WebSocket message:", error);
             }
         };
-        
 
         setWs(webSocket);
 
@@ -167,8 +183,24 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
     return (
         <div className="App">
             <div className="draw-area">
-                <Menu setLineColor={setLineColor} setLineWidth={setLineWidth} sessionId={sessionId} />
-                <canvas onMouseDown={startDrawing} onMouseUp={endDrawing} onMouseMove={draw} ref={canvasRef} width={1280} height={720} />
+                <Menu 
+                    setLineColor={setLineColor} 
+                    setLineWidth={setLineWidth} 
+                    sessionId={sessionId}
+                    canvasRef={canvasRef} 
+                    handleFullErase={handleFullErase}
+                />
+                <canvas
+                    onMouseDown={startDrawing}
+                    onMouseUp={endDrawing}
+                    onMouseMove={draw}
+                    onTouchStart={startDrawing}
+                    onTouchEnd={endDrawing}
+                    onTouchMove={draw}
+                    ref={canvasRef}
+                    width={1280}
+                    height={720}
+                />
                 {isDrawing && cursorPosition && (
                     <div
                         className="cursor"

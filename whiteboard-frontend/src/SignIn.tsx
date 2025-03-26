@@ -12,6 +12,8 @@ function SignIn() {
   };
 
   const handleSignIn = async () => {
+    alert('Sign-in unavailable until later notice.');
+    /*
     const sessionId = await createConnection();
     localStorage.setItem("sessionId", sessionId); // Save sessionId for later bc cognito doesn't like query params :(
     
@@ -23,6 +25,7 @@ function SignIn() {
     
     // Cognito Login URL (no sessionId here)
     window.location.href = `https://us-east-2sv64gr3vo.auth.us-east-2.amazoncognito.com/login?client_id=1leh5p4ea4vq0imp5nksudclsa&redirect_uri=${redirectUri}&response_type=code&scope=email+openid+phone`;
+    */
   };
 
   const createConnection = async () => {
@@ -38,8 +41,7 @@ function SignIn() {
   }
 
   return (
-    <div>
-      <h1>Welcome Screen</h1>
+    <div className="sign-in-container">
       <button onClick={joinAsGuest}>Continue as Guest</button>
       <button onClick={handleSignIn}>Sign In</button>
     </div>
