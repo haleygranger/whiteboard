@@ -17,4 +17,4 @@ This is my senior project. A real-time collaborative whiteboard application wher
 ## Heres some important links:
 
 Landing Page:
-https://main.dbiwmhwrvdu84.amplifyapp.com/
+https://main.d3nwftw9t1phgg.amplifyapp.com/

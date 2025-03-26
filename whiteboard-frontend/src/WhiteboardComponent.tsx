@@ -100,24 +100,32 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
     const updateCanvasFromServer = (drawingUsers: DrawingData[]) => {
         const ctx = canvasRef.current?.getContext("2d");
         if (!ctx) return;
-
+    
+        // Loop through each user drawing data
         drawingUsers.forEach((userStroke) => {
-            if (!userStroke.path) return;
-
-            ctx.strokeStyle = userStroke.lineColor || "black";
-            ctx.lineWidth = userStroke.lineWidth || 2;
-            ctx.beginPath();
-
-            userStroke.path.forEach((point: { x: number; y: number }, index: number) => {
-                if (index === 0) {
-                    ctx.moveTo(point.x, point.y);
-                } else {
-                    ctx.lineTo(point.x, point.y);
-                }
-            });
-            ctx.stroke();
+            // Log the drawing user data
+            console.log("User stroke data:", userStroke);
+    
+            // Ensure 'path' exists and is an array
+            if (userStroke.path && Array.isArray(userStroke.path)) {
+                ctx.strokeStyle = userStroke.lineColor || "black";
+                ctx.lineWidth = userStroke.lineWidth || 2;
+                ctx.beginPath();
+    
+                userStroke.path.forEach((point: { x: number; y: number }, index: number) => {
+                    if (index === 0) {
+                        ctx.moveTo(point.x, point.y);
+                    } else {
+                        ctx.lineTo(point.x, point.y);
+                    }
+                });
+                ctx.stroke();
+            } else {
+                console.error("Invalid path data:", userStroke.path);
+            }
         });
-    };
+    };    
+    
 
     useEffect(() => {
         const queryParams = new URLSearchParams({
@@ -135,15 +143,19 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
             try {
                 const data = JSON.parse(event.data);
                 console.log("Received WebSocket message:", data);
-
-                if (data.sessionId && data.drawingData) {
-                    console.log("Updating Whiteboard.")
-                    updateCanvasFromServer([data.drawingData]);
+        
+                // Ensure the message contains the expected fields
+                if (data && Array.isArray(data.path)) {
+                    console.log("Updating Whiteboard.");
+                    updateCanvasFromServer([data]); // Pass the entire data object
+                } else {
+                    console.error("Invalid WebSocket message format:", data);
                 }
             } catch (error) {
                 console.error("Error parsing WebSocket message:", error);
             }
         };
+        
 
         setWs(webSocket);
 
