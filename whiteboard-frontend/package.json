@@ -12,13 +12,15 @@
   "dependencies": {
     "@aws-sdk/client-apigatewaymanagementapi": "^3.758.0",
     "@aws-sdk/client-dynamodb": "^3.758.0",
+    "font-awesome": "^4.7.0",
     "oidc-client-ts": "^3.2.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-oidc-context": "^3.2.0",
     "react-router-dom": "^7.2.0",
     "recoil": "^0.7.7",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "vite-plugin-svgr": "^4.3.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",
