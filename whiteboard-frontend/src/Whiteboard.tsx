@@ -43,8 +43,8 @@ const Whiteboard: React.FC = () => {
     }
   }, [auth]);
 
-  console.log("sessionId from Whiteboard.tsx: " + sessionId);
-  console.log("userId from Whiteboard.tsx: " + userId);
+  //console.log("sessionId from Whiteboard.tsx: " + sessionId);
+  //console.log("userId from Whiteboard.tsx: " + userId);
 
   return (
     <div>      

@@ -23,6 +23,11 @@ interface DrawingData {
     lineColor: string;
 }
 
+interface CursorData {
+    userId: string;
+    position: { x: number; y: number };
+}
+
 const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
@@ -30,8 +35,12 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
     const [lineWidth, setLineWidth] = useState<number>(8);
     const [lineColor, setLineColor] = useState<string>("black");
     const [cursorPosition, setCursorPosition] = useState<{ x: number; y: number } | null>(null);
-    const [path, setPath] = useState<{ x: number; y: number }[]>([]);
+    const [path, setPath] = useState<{ x: number; y: number }[]>([]); console.log(path);
     const [ws, setWs] = useState<WebSocket | null>(null);
+    const[sentTime, setSentTime] = useState<number>(Date.now());
+    const pathBuffer = useRef<{ x: number; y: number }[]>([]);
+    const MESSAGE_SEND_TIME = 100;
+    const [otherCursors, setOtherCursors] = useState<CursorData[]>([]); 
 
     // Initialization when the component mounts
     useEffect(() => {
@@ -63,21 +72,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
             ctxRef.current.closePath();
         }
         setIsDrawing(false);
-
-        if (ws && path.length > 0) {
-            ws.send(
-                JSON.stringify({
-                    sessionId,
-                    drawingData: {
-                        userId,
-                        path,
-                        lineWidth,
-                        lineColor,
-                    },
-                })
-            );
-            setPath([]); // Clear after sending
-        }
+        pathBuffer.current = [];
     };
 
     const draw = (e: MouseEventWithOffset | TouchEventWithOffset): void => {
@@ -88,8 +83,31 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
         ctxRef.current.lineTo(offset.x, offset.y);
         ctxRef.current.stroke();
         updateCursor(offset);
-        setPath((prev) => [...prev, { x: offset.x, y: offset.y }]);
+        pathBuffer.current.push(offset); // Storing path in the buffer
+        setPath((prev) => [...prev, offset]);
+        //console.log(path.length);
+        sendDrawing(offset);
     };
+
+    const sendDrawing = (offset: {x: number; y: number;}) =>
+    {
+        if (ws && Date.now() - sentTime > MESSAGE_SEND_TIME && pathBuffer.current.length > 0) {
+            ws.send(
+                JSON.stringify({
+                    sessionId,
+                    drawingData: {
+                        userId,
+                        path : [...pathBuffer.current], // sent the CURRENT buffer
+                        lineWidth,
+                        lineColor,
+                    },
+                })
+            );
+            pathBuffer.current = [offset];
+            //setPath([]); // Clear sent path
+            setSentTime(Date.now());
+        }
+    }
 
     const getOffset = (e: MouseEventWithOffset | TouchEventWithOffset) => {
         const canvas = canvasRef.current;
@@ -111,6 +129,17 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
 
     const updateCursor = (position: { x: number; y: number }) => {
         setCursorPosition(position);
+        if (ws) {
+            ws.send(
+                JSON.stringify({
+                sessionId,
+                cursorData: {
+                    userId,
+                    position,
+                    },
+                })
+            );
+        }
     };
 
     const updateCanvasFromServer = (drawingUsers: DrawingData[]) => {
@@ -131,6 +160,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
                     }
                 });
                 ctx.stroke();
+                ctx.closePath();
             } else {
                 console.error("Invalid path data:", userStroke.path);
             }
@@ -138,6 +168,17 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
     };
 
     const handleFullErase = () => {
+        if (ws) {
+            // Send erase event to WebSocket server
+            ws.send(
+                JSON.stringify({
+                    sessionId,
+                    erase: true, // Custom erase flag
+                    userId,
+                })
+            );
+        }
+
         if (canvasRef.current && ctxRef.current) {
             const ctx = ctxRef.current;
             ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
@@ -159,17 +200,47 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
         };
 
         webSocket.onmessage = (event) => {
+            console.log("Received WebSocket message:", event.data);
+
+            // Check if the message is JSON
             try {
                 const data = JSON.parse(event.data);
-                console.log("Received WebSocket message:", data);
+                if (data.position) {
+                    // Handle cursor update
+                    setOtherCursors((prevCursors) => {
+                        const updatedCursors = [...prevCursors];
+                        const existingCursorIndex = updatedCursors.findIndex(
+                            (cursor) => cursor.userId === data.userId
+                        );
+                        if (existingCursorIndex !== -1) {
+                            updatedCursors[existingCursorIndex] = {
+                                userId: data.userId,
+                                position: data.position,  // Use position from the message
+                            };
+                        } else {
+                            updatedCursors.push({
+                                userId: data.userId,
+                                position: data.position,  // Add new cursor with userId and position
+                            });
+                        }
+                        return updatedCursors;
+                    });
+                    console.log("Updated Other Cursors:", otherCursors);
+                }
 
                 if (data && Array.isArray(data.path)) {
                     updateCanvasFromServer([data]);
-                } else {
-                    console.error("Invalid WebSocket message format:", data);
+                }
+                // Handle full erase event
+                else if (data.erase) {
+                    const ctx = canvasRef.current?.getContext("2d");
+                    if (ctx && canvasRef.current) {
+                        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+                        setPath([]); // Clear local path
+                    }
                 }
             } catch (error) {
-                console.error("Error parsing WebSocket message:", error);
+                console.warn("Non-JSON WebSocket message received:", event.data);
             }
         };
 
@@ -206,12 +277,25 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
                         className="cursor"
                         style={{
                             left: `${cursorPosition.x}px`,
-                            top: `${cursorPosition.y + 80}px`,
+                            top: `${cursorPosition.y + 120}px`,
                         }}
                     >
                         {userId}
                     </div>
                 )}
+                {otherCursors.map((cursor) => (
+                    <div
+                        key={cursor.userId}
+                        className="other-cursor"
+                        style={{
+                            left: `${cursor.position.x}px`,
+                            top: `${cursor.position.y + 120}px`,
+                            color: "blue", 
+                        }}
+                    >
+                        {cursor.userId}
+                    </div>
+                ))}
             </div>
         </div>
     );
