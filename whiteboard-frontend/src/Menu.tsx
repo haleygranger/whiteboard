@@ -24,8 +24,8 @@ const Menu: React.FC<MenuProps> = ({ setLineColor, setLineWidth, sessionId, hand
 
     // Function to generate a shareable URL and display the QR code inside the modal
     const handleShareClick = () => {
-        //const shareableUrl = `https://main.d3nwftw9t1phgg.amplifyapp.com/whiteboard?sessionId=${sessionId}`;
-        const shareableUrl = `http://localhost:5173/whiteboard?sessionId=${sessionId}`;
+        const shareableUrl = `https://main.d3nwftw9t1phgg.amplifyapp.com/whiteboard?sessionId=${sessionId}`;
+        //const shareableUrl = `http://localhost:5173/whiteboard?sessionId=${sessionId}`;
         // console.log(sessionId); // This is NOT NULL
         // Construct QR code API URL
         const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(shareableUrl)}`;
