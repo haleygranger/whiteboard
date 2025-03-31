@@ -4,6 +4,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from 'react-oidc-context'; 
 import SignIn from "./SignIn";
 import Whiteboard from "./Whiteboard";
+import GuestSignIn from "./GuestSignIn";
+import GuestSignInWithSession from "./GuestSignInWithSession";
 import './App.css'
 
 const cognitoAuthConfig = {
@@ -23,6 +25,8 @@ ReactDOM.createRoot(container).render(
         <Routes>
           <Route path="/" element={<SignIn />} />
           <Route path="/whiteboard" element={<Whiteboard />} />
+          <Route path="/GuestSignIn" element={<GuestSignIn />} />
+          <Route path="/GuestSignInSession" element={<GuestSignInWithSession />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

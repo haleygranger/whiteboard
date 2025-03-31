@@ -1,31 +1,16 @@
 import { useNavigate } from "react-router-dom";
-//import { useAuth } from "react-oidc-context";
 import "./App.css";
 
 function SignIn() {
   const navigate = useNavigate();
-  //const auth = useAuth();
 
-  const joinAsGuest = async () => {
-    const sessionId = await createConnection();
-    navigate(`/whiteboard?sessionId=${sessionId}`); // Redirect to the whiteboard page
+  const handleGuestClick = async () => {
+    navigate(`/GuestSignIn`); // Redirect to the Guest Sign in page
   };
 
   const handleSignIn = async () => {
     alert('Sign-in unavailable until later notice.');
-    /*
-    const sessionId = await createConnection();
-    localStorage.setItem("sessionId", sessionId); // Save sessionId for later bc cognito doesn't like query params :(
-    
-    console.log("sessionId: " + sessionId);
-    const redirectUri = encodeURIComponent(
-      "https://main.dbiwmhwrvdu84.amplifyapp.com/whiteboard"
-    );
-    console.log("redirect_uri: " + redirectUri);
-    
-    // Cognito Login URL (no sessionId here)
-    window.location.href = `https://us-east-2sv64gr3vo.auth.us-east-2.amazoncognito.com/login?client_id=1leh5p4ea4vq0imp5nksudclsa&redirect_uri=${redirectUri}&response_type=code&scope=email+openid+phone`;
-    */
+    createConnection(); // TO DO
   };
 
   const createConnection = async () => {
@@ -42,7 +27,7 @@ function SignIn() {
 
   return (
     <div className="sign-in-container">
-      <button onClick={joinAsGuest}>Continue as Guest</button>
+      <button onClick={handleGuestClick}>Continue as Guest</button>
       <button onClick={handleSignIn}>Sign In</button>
     </div>
   );
