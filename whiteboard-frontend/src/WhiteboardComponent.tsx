@@ -19,6 +19,7 @@ interface WhiteboardProps {
 interface DrawingData {
     userId: string;
     path: { x: number; y: number }[];
+    filteredPath : {x:number; y:number}[];
     lineWidth: number;
     lineColor: string;
 }
@@ -37,7 +38,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
     const [cursorPosition, setCursorPosition] = useState<{ x: number; y: number } | null>(null);
     const [path, setPath] = useState<{ x: number; y: number }[]>([]); console.log(path);
     const [ws, setWs] = useState<WebSocket | null>(null);
-    const[sentTime, setSentTime] = useState<number>(Date.now());
+    const [sentTime, setSentTime] = useState<number>(Date.now());
     const pathBuffer = useRef<{ x: number; y: number }[]>([]);
     const MESSAGE_SEND_TIME = 100;
     const [otherCursors, setOtherCursors] = useState<CursorData[]>([]); 
@@ -85,12 +86,13 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
         updateCursor(offset);
         pathBuffer.current.push(offset); // Storing path in the buffer
         setPath((prev) => [...prev, offset]);
-        //console.log(path.length);
         sendDrawing(offset);
     };
 
     const sendDrawing = (offset: {x: number; y: number;}) =>
     {
+        updateCursor(offset);
+        const position = cursorPosition;
         if (ws && Date.now() - sentTime > MESSAGE_SEND_TIME && pathBuffer.current.length > 0) {
             ws.send(
                 JSON.stringify({
@@ -101,10 +103,14 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
                         lineWidth,
                         lineColor,
                     },
+                    cursorData: {
+                        position,
+                        userId,
+                    }
+                    
                 })
             );
             pathBuffer.current = [offset];
-            //setPath([]); // Clear sent path
             setSentTime(Date.now());
         }
     }
@@ -129,36 +135,36 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
 
     const updateCursor = (position: { x: number; y: number }) => {
         setCursorPosition(position);
-        if (ws) {
-            ws.send(
-                JSON.stringify({
-                sessionId,
-                cursorData: {
-                    userId,
-                    position,
-                    },
-                })
-            );
-        }
     };
 
     const updateCanvasFromServer = (drawingUsers: DrawingData[]) => {
         const ctx = canvasRef.current?.getContext("2d");
         if (!ctx) return;
-
+    
         drawingUsers.forEach((userStroke) => {
             if (userStroke.path && Array.isArray(userStroke.path)) {
                 ctx.strokeStyle = userStroke.lineColor || "black";
                 ctx.lineWidth = userStroke.lineWidth || 2;
                 ctx.beginPath();
-
-                userStroke.path.forEach((point: { x: number; y: number }, index: number) => {
-                    if (index === 0) {
-                        ctx.moveTo(point.x, point.y);
+    
+                let isNewStroke = true; // Flag to start a new path when needed
+    
+                userStroke.path.forEach((point: { x: number; y: number }) => {
+                    if (point.x === -1 && point.y === -1) {
+                        // Breakpoint detected: Close the current path and start a new one
+                        ctx.stroke();
+                        ctx.beginPath();
+                        isNewStroke = true;
                     } else {
-                        ctx.lineTo(point.x, point.y);
+                        if (isNewStroke) {
+                            ctx.moveTo(point.x, point.y);
+                            isNewStroke = false;
+                        } else {
+                            ctx.lineTo(point.x, point.y);
+                        }
                     }
                 });
+    
                 ctx.stroke();
                 ctx.closePath();
             } else {
@@ -197,6 +203,16 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
 
         webSocket.onopen = () => {
             console.log("WebSocket Connected");
+            webSocket.send(
+                JSON.stringify({
+                    newUser: true,
+                    sessionId: sessionId
+                })
+            )
+            console.log("Sending newUser" + JSON.stringify({
+                newUser: true,
+                sessionId: sessionId
+            }));
         };
 
         webSocket.onmessage = (event) => {
@@ -204,7 +220,12 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
 
             // Check if the message is JSON
             try {
+                // If new user event = loadPrevious
                 const data = JSON.parse(event.data);
+                if (data.drawingData) {
+                    console.log("Received previous drawings:", data.drawingData);
+                    updateCanvasFromServer(data.drawingData); // Call drawing function
+                }
                 if (data.position) {
                     // Handle cursor update
                     setOtherCursors((prevCursors) => {
