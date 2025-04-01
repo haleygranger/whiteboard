@@ -33,6 +33,7 @@ function GuestSignIn() {
 
     return (
         <div className="sign-in-container">
+            <h1>Create a Whiteboard!</h1>
             <input
                 type="text"
                 className={`guest-signin-text`}

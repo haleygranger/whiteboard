@@ -46,6 +46,7 @@ function GuestSignInWithSession() {
 
     return (
         <div className="sign-in-container">
+            <h1>Join a Whiteboard!</h1>
             <input
                 type="text"
                 className="guest-signin-text"
