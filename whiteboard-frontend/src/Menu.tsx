@@ -1,6 +1,7 @@
 
 import "./App.css";
-import 'font-awesome/css/font-awesome.min.css'; // Import FontAwesome CSS
+//import 'font-awesome/css/font-awesome.min.css'; // Import FontAwesome CSS
+import '@fortawesome/fontawesome-free/css/all.min.css';
 
 interface MenuProps {
     setLineColor: (color: string) => void;
@@ -93,6 +94,7 @@ const Menu: React.FC<MenuProps> = ({ setLineColor, setLineWidth, sessionId, hand
                 <input
                     type="color"
                     onChange={(e) => setLineColor(e.target.value)}
+                    title="Color Picker"
                 />
             </div>
             <div className="size-picker">
@@ -112,17 +114,35 @@ const Menu: React.FC<MenuProps> = ({ setLineColor, setLineWidth, sessionId, hand
                 </div>
             </div>
             <div>
-                <button className="eraser-button" onClick={handleEraser}>
+                <button className="shapes-button" title="Shapes">
+                    <i className="fas fa-shapes"></i>
+                </button>
+            </div>
+            <div>
+                <button className="eraser-button" onClick={handleEraser} title="Eraser">
                     <i className="fa fa-eraser" />
                 </button>
             </div>
             <div>
-                <button className="erase-all-button" onClick={handleFullErase}>
+                <button className="erase-all-button" onClick={handleFullErase} title="Clear">
                     <i className="fa fa-bomb"/>
                 </button>
             </div>
+            <div className="grid-item">
+
+            </div>
+            <div className="save-load-container" title="Save">
+                <button className="save-button">
+                    <i className="fas fa-save"></i>
+                </button>
+                <button className="load-button" title="Load">
+                    <i className="fa fa-upload" aria-hidden="true"/>
+                </button>
+            </div>
             <div>
-            <button className="share-button" onClick={handleShareClick}>Share</button>
+            <button className="share-button" onClick={handleShareClick} title="Share">
+                <i className="fas fa-share-square"></i>                
+            </button>
             </div>
         </div>
 
