@@ -8,6 +8,9 @@ import { getCurrentUser } from 'aws-amplify/auth';
 const userPoolClientId = import.meta.env.VITE_COGNITO_CLIENT_ID;
 const userPoolId = import.meta.env.VITE_COGNITO_USER_POOL_ID;
 
+console.log("userPoolClientId: "+ userPoolClientId );
+console.log("userPoolId: " + userPoolId);
+
 Amplify.configure({
   Auth: {
     Cognito: {
