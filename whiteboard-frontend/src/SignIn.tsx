@@ -1,15 +1,12 @@
 import { useNavigate } from "react-router-dom";
-import { Amplify } from 'aws-amplify';
-import { signInWithRedirect, signOut } from '@aws-amplify/auth';
-import { useState, useEffect } from "react";
-import { getCurrentUser } from 'aws-amplify/auth';
+import { Amplify } from "aws-amplify";
+import { signInWithRedirect, signOut } from "@aws-amplify/auth";
+import { useEffect, useState } from "react";
+import { getCurrentUser } from "aws-amplify/auth";
 import "./App.css";
 
 const userPoolClientId = import.meta.env.VITE_COGNITO_CLIENT_ID;
 const userPoolId = import.meta.env.VITE_COGNITO_USER_POOL_ID;
-
-//console.log("userPoolClientId: "+ userPoolClientId );
-//console.log("userPoolId: " + userPoolId);
 
 Amplify.configure({
   Auth: {
@@ -18,64 +15,64 @@ Amplify.configure({
       userPoolId: userPoolId,
       loginWith: {
         oauth: {
-          domain: 'us-east-2sv64gr3vo.auth.us-east-2.amazoncognito.com',
-          scopes: ['openid', 'email', 'phone'],
-          redirectSignIn: ['http://localhost:5173/', 'https://main.d3nwftw9t1phgg.amplifyapp.com/'], // Both local and prod
-          redirectSignOut: ['http://localhost:5173/', 'https://main.d3nwftw9t1phgg.amplifyapp.com/'], // Both local and prod
-          responseType: 'code',
+          domain: "us-east-2sv64gr3vo.auth.us-east-2.amazoncognito.com",
+          scopes: ["openid", "email", "phone"],
+          redirectSignIn: ["http://localhost:5173/", "https://main.d3nwftw9t1phgg.amplifyapp.com/"],
+          redirectSignOut: ["http://localhost:5173/", "https://main.d3nwftw9t1phgg.amplifyapp.com/"],
+          responseType: "code",
         },
         username: true,
         email: false,
-      }
-    }
-  }
+      },
+    },
+  },
 });
 
 function SignIn() {
   const navigate = useNavigate();
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Check authentication state on mount
   useEffect(() => {
-    const checkAuth = async () => {
+    // Ensure no one is signed in on load
+    const ensureLoggedOut = async () => {
       try {
-        const user = await getCurrentUser();
-        console.log("User authenticated:", user);
-        setUserId(user.username);
-
-        // Only create a new session if userId was successfully fetched
-        if (user.username) {
-          const newSessionId = await createConnection();
-          setSessionId(newSessionId);
-        }
+        await signOut();
+        console.log("Signed out on load to ensure fresh login.");
       } catch (error) {
-        console.error("User is not authenticated", error);
+        console.error("Error signing out:", error);
       }
+      setLoading(false);
     };
-
-    checkAuth();
-  }, []); // Run once when component mounts
-
-  // Navigate once both sessionId and userId are set
-  useEffect(() => {
-    if (sessionId && userId) {
-      navigate(`/whiteboard?sessionId=${sessionId}&userId=${encodeURIComponent(userId)}`);
-    }
-  }, [sessionId, userId, navigate]);
-
-  const handleGuestClick = async () => {
-    navigate(`/GuestSignIn`);
-  };
+    
+    ensureLoggedOut();
+  }, []);
 
   const handleSignIn = async () => {
     try {
-      await signOut();  // Ensure fresh login
-      await signInWithRedirect(); // Redirects user to Cognito login
+      console.log("Redirecting to Cognito...");
+      await signInWithRedirect(); // Redirects the user to sign in
     } catch (error) {
       console.error("Error signing in:", error);
     }
   };
+
+  useEffect(() => {
+    // Check if user is authenticated AFTER login redirect
+    const checkAuth = async () => {
+      try {
+        const user = await getCurrentUser();
+        console.log("User authenticated:", user);
+
+        // Create a session and navigate to whiteboard
+        const sessionId = await createConnection();
+        navigate(`/whiteboard?sessionId=${sessionId}&userId=${encodeURIComponent(user.username)}`);
+      } catch (error) {
+        console.log("User is not authenticated yet.", error);
+      }
+    };
+
+    checkAuth();
+  }, []);
 
   const createConnection = async () => {
     const response = await fetch("https://qdeqrga8ac.execute-api.us-east-2.amazonaws.com/create-session", {
@@ -87,6 +84,14 @@ function SignIn() {
     return data.sessionId;
   };
 
+  const handleGuestClick = async () => {
+    navigate(`/GuestSignIn`);
+  };
+
+  if (loading) {
+    return <div>Loading...</div>; // Prevents UI interaction until sign-out completes
+  }
+
   return (
     <div className="sign-in-container">
       <button onClick={handleGuestClick}>Continue as Guest</button>
@@ -96,3 +101,4 @@ function SignIn() {
 }
 
 export default SignIn;
+
