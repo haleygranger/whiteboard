@@ -1,15 +1,15 @@
 import { useNavigate } from "react-router-dom";
 import { Amplify } from 'aws-amplify';
 import { signInWithRedirect, signOut } from '@aws-amplify/auth';
-import "./App.css";
 import { useState, useEffect } from "react";
 import { getCurrentUser } from 'aws-amplify/auth';
+import "./App.css";
 
 const userPoolClientId = import.meta.env.VITE_COGNITO_CLIENT_ID;
 const userPoolId = import.meta.env.VITE_COGNITO_USER_POOL_ID;
 
-console.log("userPoolClientId: "+ userPoolClientId );
-console.log("userPoolId: " + userPoolId);
+//console.log("userPoolClientId: "+ userPoolClientId );
+//console.log("userPoolId: " + userPoolId);
 
 Amplify.configure({
   Auth: {
@@ -33,34 +33,47 @@ Amplify.configure({
 
 function SignIn() {
   const navigate = useNavigate();
-  const [sessionId, setSessionId] = useState<string | null>(null); // use string or null for clarity
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
 
+  // Check authentication state on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const user = await getCurrentUser();
+        console.log("User authenticated:", user);
+        setUserId(user.username);
+
+        // Only create a new session if userId was successfully fetched
+        if (user.username) {
+          const newSessionId = await createConnection();
+          setSessionId(newSessionId);
+        }
+      } catch (error) {
+        console.error("User is not authenticated", error);
+      }
+    };
+
+    checkAuth();
+  }, []); // Run once when component mounts
+
+  // Navigate once both sessionId and userId are set
   useEffect(() => {
     if (sessionId && userId) {
-      // Once both sessionId and userId are set, navigate
       navigate(`/whiteboard?sessionId=${sessionId}&userId=${encodeURIComponent(userId)}`);
     }
   }, [sessionId, userId, navigate]);
 
   const handleGuestClick = async () => {
-    navigate(`/GuestSignIn`); // Redirect to the Guest Sign-in page
+    navigate(`/GuestSignIn`);
   };
 
   const handleSignIn = async () => {
     try {
-      await signOut();
-      await signInWithRedirect();
-      // Check if the user is authenticated
-      const user = await getCurrentUser();
-      setUserId(user.username);
-
-      const newSessionId = await createConnection();
-      setSessionId(newSessionId); // Update sessionId state after getting it
-      console.log("Getting here");
-
+      await signOut();  // Ensure fresh login
+      await signInWithRedirect(); // Redirects user to Cognito login
     } catch (error) {
-      console.error('Error signing in:', error);
+      console.error("Error signing in:", error);
     }
   };
 
@@ -70,9 +83,8 @@ function SignIn() {
     });
 
     const data = await response.json();
-    const sessionId = data.sessionId;
-    console.log("sessionId from createConnection: " + sessionId);
-    return sessionId; // Return the sessionId
+    console.log("sessionId from createConnection:", data.sessionId);
+    return data.sessionId;
   };
 
   return (
