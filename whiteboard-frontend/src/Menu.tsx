@@ -1,6 +1,5 @@
 
 import "./App.css";
-//import 'font-awesome/css/font-awesome.min.css'; // Import FontAwesome CSS
 import '@fortawesome/fontawesome-free/css/all.min.css';
 
 interface MenuProps {
@@ -9,9 +8,11 @@ interface MenuProps {
     sessionId: string;
     canvasRef: React.RefObject<HTMLCanvasElement | null>;
     handleFullErase: () => void;
+    handleShapes: () => void;
+    handleSave: () => void;
 }
 
-const Menu: React.FC<MenuProps> = ({ setLineColor, setLineWidth, sessionId, handleFullErase}) => {
+const Menu: React.FC<MenuProps> = ({ setLineColor, setLineWidth, sessionId, handleFullErase, handleShapes, handleSave}) => {
 
     const sizes = [
         { label: "small", value: 3 },
@@ -114,7 +115,7 @@ const Menu: React.FC<MenuProps> = ({ setLineColor, setLineWidth, sessionId, hand
                 </div>
             </div>
             <div>
-                <button className="shapes-button" title="Shapes">
+                <button className="shapes-button" title="Shapes" onClick={handleShapes}>
                     <i className="fas fa-shapes"></i>
                 </button>
             </div>
@@ -131,7 +132,7 @@ const Menu: React.FC<MenuProps> = ({ setLineColor, setLineWidth, sessionId, hand
             <div className="grid-item">
 
             </div>
-            <div className="save-load-container" title="Save">
+            <div className="save-load-container" onClick={handleSave} title="Save">
                 <button className="save-button">
                     <i className="fas fa-save"></i>
                 </button>

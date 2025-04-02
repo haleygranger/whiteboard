@@ -192,6 +192,40 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
         }
     };
 
+    const handleShapes = () => {
+        alert("Shape development in progress.");
+    }
+
+    const handleSave = async () => {
+        try {
+            const requestBody = {
+                userId: userId,
+                sessionId: sessionId,
+            };
+    
+            const response = await fetch(
+                "https://qdeqrga8ac.execute-api.us-east-2.amazonaws.com/save-whiteboard",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(requestBody),
+                }
+            );
+    
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+    
+            const responseData = await response.json(); // Parse response body
+            console.log("Save successful:", responseData);
+            alert("Whiteboard Saved Successfully!")
+        } catch (error) {
+            console.error("Error saving whiteboard:", error);
+        }
+    };
+
     // WebSocket Stuff
     useEffect(() => {
         const queryParams = new URLSearchParams({
@@ -281,6 +315,8 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
                     sessionId={sessionId}
                     canvasRef={canvasRef} 
                     handleFullErase={handleFullErase}
+                    handleShapes={handleShapes}
+                    handleSave={handleSave}
                 />
                 <canvas
                     onMouseDown={startDrawing}
