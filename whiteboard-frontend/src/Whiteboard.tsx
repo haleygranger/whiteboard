@@ -2,7 +2,11 @@ import React, { useEffect, useState } from "react";
 import WhiteboardComponent from "./WhiteboardComponent";
 import { useLocation, useNavigate } from "react-router-dom";
 
-const Whiteboard: React.FC = () => {
+interface WhiteboardProps {
+  isAuth: boolean;
+}
+
+const Whiteboard: React.FC<WhiteboardProps> = ({ isAuth }) => {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const navigate = useNavigate();
@@ -46,7 +50,7 @@ const Whiteboard: React.FC = () => {
 
   return (
     <div>
-      <WhiteboardComponent sessionId={sessionId} userId={userId} />
+      <WhiteboardComponent sessionId={sessionId} userId={userId} isAuth={isAuth}/>
     </div>
   );
 };
