@@ -14,6 +14,7 @@ interface TouchEventWithOffset extends React.TouchEvent<HTMLCanvasElement> {
 interface WhiteboardProps {
     sessionId: string;
     userId: string;
+    isAuth: boolean;
 }
 
 interface DrawingData {
@@ -29,7 +30,7 @@ interface CursorData {
     position: { x: number; y: number };
 }
 
-const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) => {
+const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isAuth }) => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
     const [isDrawing, setIsDrawing] = useState<boolean>(false);
@@ -41,7 +42,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
     const [sentTime, setSentTime] = useState<number>(Date.now());
     const pathBuffer = useRef<{ x: number; y: number }[]>([]);
     const MESSAGE_SEND_TIME = 100;
-    const [otherCursors, setOtherCursors] = useState<CursorData[]>([]); 
+    const [otherCursors, setOtherCursors] = useState<CursorData[]>([]);
 
     // Initialization when the component mounts
     useEffect(() => {
@@ -197,32 +198,38 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId }) =
     }
 
     const handleSave = async () => {
-        try {
-            const requestBody = {
-                userId: userId,
-                sessionId: sessionId,
-            };
-    
-            const response = await fetch(
-                "https://qdeqrga8ac.execute-api.us-east-2.amazonaws.com/save-whiteboard",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(requestBody),
+        if (isAuth){
+            try {
+                const requestBody = {
+                    userId: userId,
+                    sessionId: sessionId,
+                };
+        
+                const response = await fetch(
+                    "https://qdeqrga8ac.execute-api.us-east-2.amazonaws.com/save-whiteboard",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(requestBody),
+                    }
+                );
+        
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
                 }
-            );
-    
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
+        
+                const responseData = await response.json(); // Parse response body
+                console.log("Save successful:", responseData);
+                alert("Whiteboard Saved Successfully!")
+            } catch (error) {
+                console.error("Error saving whiteboard:", error);
             }
-    
-            const responseData = await response.json(); // Parse response body
-            console.log("Save successful:", responseData);
-            alert("Whiteboard Saved Successfully!")
-        } catch (error) {
-            console.error("Error saving whiteboard:", error);
+        }
+        else
+        {
+            alert("Saving only permitted to signed-in users.")
         }
     };
 

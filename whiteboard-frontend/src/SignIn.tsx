@@ -28,7 +28,7 @@ Amplify.configure({
   },
 });
 
-function SignIn() {
+function SignIn({ setAuthStatus }: { setAuthStatus: (auth: boolean) => void }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
 
@@ -62,7 +62,7 @@ function SignIn() {
       try {
         const user = await getCurrentUser();
         console.log("User authenticated:", user);
-
+        setAuthStatus(true);
         // Create a session and navigate to whiteboard
         const sessionId = await createConnection();
         navigate(`/whiteboard?sessionId=${sessionId}&userId=${encodeURIComponent(user.username)}`);
