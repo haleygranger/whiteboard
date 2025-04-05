@@ -44,6 +44,6 @@ function GuestSignIn() {
             <button onClick={handleJoin}>Join</button>
         </div>
     );
-    }
+}
 
     export default GuestSignIn;

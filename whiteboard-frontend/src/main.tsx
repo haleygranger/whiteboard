@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import ReactDOM from "react-dom/client";
 import SignIn from "./SignIn";
 import Whiteboard from "./Whiteboard";
 import GuestSignIn from "./GuestSignIn";
 import GuestSignInWithSession from "./GuestSignInWithSession";
+import Loadboards from "./Loadboards";
 import './App.css';
 
 const App: React.FC = () => {
@@ -17,6 +18,7 @@ const App: React.FC = () => {
         <Route path="/whiteboard" element={<Whiteboard isAuth={isAuth} />} />
         <Route path="/GuestSignIn" element={<GuestSignIn />} />
         <Route path="/GuestSignInSession" element={<GuestSignInWithSession />} />
+        <Route path="/load-saved-boards" element={<Loadboards />} />
       </Routes>
     </BrowserRouter>
   );
