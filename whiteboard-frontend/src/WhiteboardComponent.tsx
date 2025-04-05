@@ -236,14 +236,12 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
     };
 
     const handleLoad = async () =>{
-        /*if (isAuth){
+        if (isAuth){
             navigate(`/load-saved-boards?sessionId=${sessionId}&userId=${encodeURIComponent(userId)}`);
         }
         else{
             alert("Loading only permitted to signed in users.")
         }
-            */
-        navigate(`/load-saved-boards?sessionId=${sessionId}&userId=${encodeURIComponent(userId)}`);
     }
 
     // WebSocket Stuff
