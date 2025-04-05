@@ -10,9 +10,10 @@ interface MenuProps {
     handleFullErase: () => void;
     handleShapes: () => void;
     handleSave: () => void;
+    handleLoad: () => void;
 }
 
-const Menu: React.FC<MenuProps> = ({ setLineColor, setLineWidth, sessionId, handleFullErase, handleShapes, handleSave}) => {
+const Menu: React.FC<MenuProps> = ({ setLineColor, setLineWidth, sessionId, handleFullErase, handleShapes, handleSave, handleLoad}) => {
 
     const sizes = [
         { label: "small", value: 3 },
@@ -132,11 +133,11 @@ const Menu: React.FC<MenuProps> = ({ setLineColor, setLineWidth, sessionId, hand
             <div className="grid-item">
 
             </div>
-            <div className="save-load-container" onClick={handleSave} title="Save">
-                <button className="save-button">
+            <div className="save-load-container">
+                <button className="save-button"  title="Save" onClick={handleSave}>
                     <i className="fas fa-save"></i>
                 </button>
-                <button className="load-button" title="Load">
+                <button className="load-button" title="Load" onClick={handleLoad}>
                     <i className="fa fa-upload" aria-hidden="true"/>
                 </button>
             </div>

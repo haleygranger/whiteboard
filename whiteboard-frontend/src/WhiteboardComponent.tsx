@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import Menu from "./Menu";
 import "./App.css";
+import { useNavigate } from "react-router-dom";
 
 // Define event types for drawing events
 interface MouseEventWithOffset extends React.MouseEvent<HTMLCanvasElement> {
@@ -43,6 +44,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
     const pathBuffer = useRef<{ x: number; y: number }[]>([]);
     const MESSAGE_SEND_TIME = 100;
     const [otherCursors, setOtherCursors] = useState<CursorData[]>([]);
+    const navigate = useNavigate();
 
     // Initialization when the component mounts
     useEffect(() => {
@@ -229,9 +231,20 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
         }
         else
         {
-            alert("Saving only permitted to signed-in users.")
+            alert("Saving only permitted to signed in users.")
         }
     };
+
+    const handleLoad = async () =>{
+        /*if (isAuth){
+            navigate(`/load-saved-boards?sessionId=${sessionId}&userId=${encodeURIComponent(userId)}`);
+        }
+        else{
+            alert("Loading only permitted to signed in users.")
+        }
+            */
+        navigate(`/load-saved-boards?sessionId=${sessionId}&userId=${encodeURIComponent(userId)}`);
+    }
 
     // WebSocket Stuff
     useEffect(() => {
@@ -243,7 +256,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
         const webSocket = new WebSocket(`wss://it1jqs927h.execute-api.us-east-2.amazonaws.com/production?${queryParams}`);
 
         webSocket.onopen = () => {
-            console.log("WebSocket Connected");
+            console.log("WebSocket Connected - WB COMPONENT");
             webSocket.send(
                 JSON.stringify({
                     newUser: true,
@@ -310,6 +323,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
 
         return () => {
             webSocket.close();
+            console.log("Websocket Disconnected - WB COMPONENT");
         };
     }, [sessionId, userId]);
 
@@ -324,6 +338,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
                     handleFullErase={handleFullErase}
                     handleShapes={handleShapes}
                     handleSave={handleSave}
+                    handleLoad={handleLoad}
                 />
                 <canvas
                     onMouseDown={startDrawing}
