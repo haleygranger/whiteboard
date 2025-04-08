@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import "./App.css";
 import '@fortawesome/fontawesome-free/css/all.min.css';
 
@@ -11,10 +12,11 @@ interface MenuProps {
     handleShapes: () => void;
     handleSave: () => void;
     handleLoad: () => void;
+    setSelectedShape: (shape: string | null) => void;
 }
 
-const Menu: React.FC<MenuProps> = ({ setLineColor, setLineWidth, sessionId, handleFullErase, handleShapes, handleSave, handleLoad}) => {
-
+const Menu: React.FC<MenuProps> = ({ setLineColor, setLineWidth, sessionId, handleFullErase, handleShapes, handleSave, handleLoad, setSelectedShape}) => {
+    const [showShapeMenu,setShowShapeMenu] = useState(false);
     const sizes = [
         { label: "small", value: 3 },
         { label: "medium", value: 8 },
@@ -23,6 +25,16 @@ const Menu: React.FC<MenuProps> = ({ setLineColor, setLineWidth, sessionId, hand
 
     const handleEraser = () => {
         setLineColor("white"); 
+    };
+
+    const toggleShapeMenu = () => {
+        setShowShapeMenu(prev => !prev);
+    }
+
+    const selectShape = (shape: string)=>{
+        setSelectedShape(shape);
+        setShowShapeMenu(false);
+        // console.log(selectedShape);
     };
 
     // Function to generate a shareable URL and display the QR code inside the modal
@@ -115,10 +127,19 @@ const Menu: React.FC<MenuProps> = ({ setLineColor, setLineWidth, sessionId, hand
                     ))}
                 </div>
             </div>
-            <div>
-                <button className="shapes-button" title="Shapes" onClick={handleShapes}>
+            <div className="shapes-wrapper">
+                <button className="shapes-button" title="Shapes" onClick={toggleShapeMenu}>
                     <i className="fas fa-shapes"></i>
                 </button>
+
+                {showShapeMenu && (
+                    <div className="shape-dropdown">
+                        <button onClick={() => selectShape("rectangle")}><i className="fa fa-square" style={{ color: "#454342" }}/></button>
+                        <button onClick={() => selectShape("circle")}><i className="fa fa-circle" style={{ color: "#454342" }}/></button>
+                        <button onClick={() => selectShape("triangle")}><i className="fa fa-play" style={{ color: "#454342" }}/></button>
+                        
+                    </div>
+                )}
             </div>
             <div>
                 <button className="eraser-button" onClick={handleEraser} title="Eraser">
