@@ -42,9 +42,11 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
     const [ws, setWs] = useState<WebSocket | null>(null);
     const [sentTime, setSentTime] = useState<number>(Date.now());
     const pathBuffer = useRef<{ x: number; y: number }[]>([]);
-    const MESSAGE_SEND_TIME = 100;
+    const MESSAGE_SEND_TIME = 50;
     const [otherCursors, setOtherCursors] = useState<CursorData[]>([]);
     const navigate = useNavigate();
+    const [selectedShape,setSelectedShape] = useState<string|null>(null);
+    const [startPoint, setStartPoint] =  useState<{ x: number; y: number } | null>(null);
 
     // Initialization when the component mounts
     useEffect(() => {
@@ -63,19 +65,56 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
 
     const startDrawing = (e: MouseEventWithOffset | TouchEventWithOffset): void => {
         const offset = getOffset(e);
-        if (ctxRef.current) {
-            ctxRef.current.beginPath();
-            ctxRef.current.moveTo(offset.x, offset.y);
-        }
         updateCursor(offset);
-        setIsDrawing(true);
+        
+        if (selectedShape){
+            setStartPoint(offset); // Get start of shape
+        } else {
+            if (ctxRef.current) {
+                ctxRef.current.beginPath();
+                ctxRef.current.moveTo(offset.x, offset.y);
+            }
+            setIsDrawing(true);
+        }
     };
 
-    const endDrawing = (): void => {
+    const endDrawing = (e?: MouseEventWithOffset | TouchEventWithOffset): void => {
+        setIsDrawing(false);
+
+        if (ws?.readyState === WebSocket.OPEN && ctxRef.current && selectedShape && startPoint && e){
+            const end = getOffset(e);
+            drawShape(startPoint, end, selectedShape, lineColor, lineWidth);
+
+            const shapeData = {
+                type: selectedShape,
+                start: startPoint,
+                end: end,
+                lineWidth,
+                lineColor,
+                userId,
+            };
+            
+            ws.send(JSON.stringify({
+                sessionId,
+                messageType: "shape",
+                shapeData,
+                cursorData :
+                    {
+                        position: end,
+                        userId
+                    },
+            })); // Sending drawing and cursor data
+
+            updateCursor(end);
+
+            setStartPoint(null);
+            setSelectedShape(null); // Reset after drawing finishes
+        }
+
         if (ctxRef.current) {
             ctxRef.current.closePath();
         }
-        setIsDrawing(false);
+        
         pathBuffer.current = [];
     };
 
@@ -90,6 +129,41 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
         pathBuffer.current.push(offset); // Storing path in the buffer
         setPath((prev) => [...prev, offset]);
         sendDrawing(offset);
+    };
+
+    const drawShape = (
+        start: { x: number; y: number },
+        end: { x: number; y: number },
+        shape: string,
+        strokeColor:string,
+        strokeWidth: number
+    ) => {
+        if (!ctxRef.current) return;
+        const ctx = ctxRef.current;
+    
+        const width = end.x - start.x;
+        const height = end.y - start.y;
+    
+        ctx.beginPath();
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = strokeWidth;
+    
+        if (shape === "rectangle") {
+            ctx.rect(start.x, start.y, width, height);
+        } else if (shape === "circle") {
+            const radius = Math.sqrt(width ** 2 + height ** 2) / 2;
+            const centerX = start.x + width / 2;
+            const centerY = start.y + height / 2;
+            ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+        } else if (shape === "triangle") {
+            ctx.moveTo(start.x + width / 2, start.y); // Top
+            ctx.lineTo(start.x, start.y + height);    // Bottom left
+            ctx.lineTo(start.x + width, start.y + height); // Bottom right
+            ctx.closePath();
+        }
+    
+        ctx.stroke();
+        updateCursor(end);
     };
 
     const sendDrawing = (offset: {x: number; y: number;}) =>
@@ -194,10 +268,6 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
             setPath([]);
         }
     };
-
-    const handleShapes = () => {
-        alert("Shape development in progress.");
-    }
 
     const handleSave = async () => {
         if (isAuth){
@@ -304,6 +374,15 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
                 if (data && Array.isArray(data.path)) {
                     updateCanvasFromServer([data]);
                 }
+                if (data.shapeData){
+                    const startPointNew = data.shapeData.start;
+                    const endNew = data.shapeData.end;
+                    const selectedShapeNew = data.shapeData.type;
+                    const lineWidthNew = data.shapeData.lineWidth;
+                    const lineColorNew = data.shapeData.lineColor;
+                    console.log(startPointNew, endNew, selectedShapeNew);
+                    drawShape(startPointNew, endNew, selectedShapeNew, lineColorNew, lineWidthNew);
+                }
                 // Handle full erase event
                 else if (data.erase) {
                     const ctx = canvasRef.current?.getContext("2d");
@@ -334,9 +413,9 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
                     sessionId={sessionId}
                     canvasRef={canvasRef} 
                     handleFullErase={handleFullErase}
-                    handleShapes={handleShapes}
                     handleSave={handleSave}
                     handleLoad={handleLoad}
+                    setSelectedShape={setSelectedShape}
                 />
                 <canvas
                     onMouseDown={startDrawing}
