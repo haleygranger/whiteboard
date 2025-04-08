@@ -9,13 +9,12 @@ interface MenuProps {
     sessionId: string;
     canvasRef: React.RefObject<HTMLCanvasElement | null>;
     handleFullErase: () => void;
-    handleShapes: () => void;
     handleSave: () => void;
     handleLoad: () => void;
     setSelectedShape: (shape: string | null) => void;
 }
 
-const Menu: React.FC<MenuProps> = ({ setLineColor, setLineWidth, sessionId, handleFullErase, handleShapes, handleSave, handleLoad, setSelectedShape}) => {
+const Menu: React.FC<MenuProps> = ({ setLineColor, setLineWidth, sessionId, handleFullErase, handleSave, handleLoad, setSelectedShape}) => {
     const [showShapeMenu,setShowShapeMenu] = useState(false);
     const sizes = [
         { label: "small", value: 3 },

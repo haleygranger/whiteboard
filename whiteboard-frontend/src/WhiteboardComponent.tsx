@@ -42,7 +42,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
     const [ws, setWs] = useState<WebSocket | null>(null);
     const [sentTime, setSentTime] = useState<number>(Date.now());
     const pathBuffer = useRef<{ x: number; y: number }[]>([]);
-    const MESSAGE_SEND_TIME = 100;
+    const MESSAGE_SEND_TIME = 50;
     const [otherCursors, setOtherCursors] = useState<CursorData[]>([]);
     const navigate = useNavigate();
     const [selectedShape,setSelectedShape] = useState<string|null>(null);
@@ -269,10 +269,6 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
         }
     };
 
-    const handleShapes = () => {
-        alert("Shape development in progress.");
-    }
-
     const handleSave = async () => {
         if (isAuth){
             try {
@@ -417,7 +413,6 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
                     sessionId={sessionId}
                     canvasRef={canvasRef} 
                     handleFullErase={handleFullErase}
-                    handleShapes={handleShapes}
                     handleSave={handleSave}
                     handleLoad={handleLoad}
                     setSelectedShape={setSelectedShape}
