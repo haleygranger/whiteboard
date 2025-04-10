@@ -31,6 +31,8 @@ Amplify.configure({
 function SignIn({ setAuthStatus }: { setAuthStatus: (auth: boolean) => void }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [navigating, setNavigating] = useState(false);
+
 
   useEffect(() => {
     // Ensure no one is signed in on load
@@ -63,6 +65,7 @@ function SignIn({ setAuthStatus }: { setAuthStatus: (auth: boolean) => void }) {
         const user = await getCurrentUser();
         console.log("User authenticated:", user);
         setAuthStatus(true);
+        setNavigating(true);
         // Create a session and navigate to whiteboard
         const sessionId = await createConnection();
         navigate(`/whiteboard?sessionId=${sessionId}&userId=${encodeURIComponent(user.username)}`);
@@ -94,6 +97,7 @@ function SignIn({ setAuthStatus }: { setAuthStatus: (auth: boolean) => void }) {
 
   return (
     <div className="sign-in-container">
+      {navigating && <span>Loading...</span>}
       <button onClick={handleGuestClick}>Continue as Guest</button>
       <button onClick={handleSignIn}>Sign In</button>
     </div>
