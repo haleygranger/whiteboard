@@ -3,28 +3,58 @@ import { useNavigate, useLocation } from "react-router-dom";
 
 interface Whiteboard {
     sessionId: { S: string };
-    drawingData: any; // Define a better type here based on your drawing data
+    drawingData: any; // Define a better type here based on drawing data
     timestamp: { N: string };
 }
 
 const Loadboards: React.FC = () => {
+
+    // HOOKS
     const navigate = useNavigate();
     const location = useLocation();
     const queryParams = new URLSearchParams(location.search);
-
     const sessionId = queryParams.get("sessionId") ?? "";
     const userId = queryParams.get("userId") ?? "";
+
+    // STATES
     const [savedWhiteboards, setSavedWhiteboards] = useState<Whiteboard[]>([]);
     const [selectedWhiteboard, setSelectedWhiteboard] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null); // Error state to display error messages
 
-    const handleBack = () => {
-        navigate(`/whiteboard?sessionId=${sessionId}&userId=${encodeURIComponent(userId)}`);
+    useEffect(() => {
+        if (userId) {
+            getSavedWhiteboards();
+        }
+    }, [userId]);
+
+    const getSavedWhiteboards = async () => {
+        try {
+            setLoading(true);
+            setError(null); // Reset error state before the request
+
+            const requestBody = { userId };
+            const response = await fetch("https://qdeqrga8ac.execute-api.us-east-2.amazonaws.com/load-whiteboard", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(requestBody),
+            });
+
+            if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+
+            const responseData = await response.json();
+            const whiteboards: Whiteboard[] = responseData.data;
+            setSavedWhiteboards(whiteboards);
+        } catch (error) {
+            console.error("Error fetching whiteboards:", error);
+            setError("Failed to load saved whiteboards.");
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const handleRadioChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setSelectedWhiteboard(event.target.value);
+    const handleBack = () => {
+        navigate(`/whiteboard?sessionId=${sessionId}&userId=${encodeURIComponent(userId)}`);
     };
 
     const handleOpen = async () => {
@@ -62,36 +92,9 @@ const Loadboards: React.FC = () => {
         }
     };
 
-    const getSavedWhiteboards = async () => {
-        try {
-            setLoading(true);
-            setError(null); // Reset error state before the request
-
-            const requestBody = { userId };
-            const response = await fetch("https://qdeqrga8ac.execute-api.us-east-2.amazonaws.com/load-whiteboard", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(requestBody),
-            });
-
-            if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-
-            const responseData = await response.json();
-            const whiteboards: Whiteboard[] = responseData.data;
-            setSavedWhiteboards(whiteboards);
-        } catch (error) {
-            console.error("Error fetching whiteboards:", error);
-            setError("Failed to load saved whiteboards.");
-        } finally {
-            setLoading(false);
-        }
+    const handleRadioChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setSelectedWhiteboard(event.target.value);
     };
-
-    useEffect(() => {
-        if (userId) {
-            getSavedWhiteboards();
-        }
-    }, [userId]);
 
     return (
         <div className="whiteboard-container">

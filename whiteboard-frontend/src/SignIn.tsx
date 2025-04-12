@@ -29,7 +29,11 @@ Amplify.configure({
 });
 
 function SignIn({ setAuthStatus }: { setAuthStatus: (auth: boolean) => void }) {
+
+  // HOOKS
   const navigate = useNavigate();
+
+  // STATES
   const [loading, setLoading] = useState(true);
   const [navigating, setNavigating] = useState(false);
 
@@ -48,15 +52,6 @@ function SignIn({ setAuthStatus }: { setAuthStatus: (auth: boolean) => void }) {
     
     ensureLoggedOut();
   }, []);
-
-  const handleSignIn = async () => {
-    try {
-      console.log("Redirecting to Cognito...");
-      await signInWithRedirect(); // Redirects the user to sign in
-    } catch (error) {
-      console.error("Error signing in:", error);
-    }
-  };
 
   useEffect(() => {
     // Check if user is authenticated AFTER login redirect
@@ -89,6 +84,15 @@ function SignIn({ setAuthStatus }: { setAuthStatus: (auth: boolean) => void }) {
 
   const handleGuestClick = async () => {
     navigate(`/GuestSignIn`);
+  };
+
+  const handleSignIn = async () => {
+    try {
+      console.log("Redirecting to Cognito...");
+      await signInWithRedirect(); // Redirects the user to sign in
+    } catch (error) {
+      console.error("Error signing in:", error);
+    }
   };
 
   if (loading) {

@@ -3,44 +3,50 @@ import { useState } from "react";
 import "./App.css";
 import '@fortawesome/fontawesome-free/css/all.min.css';
 
+// PROPS
 interface MenuProps {
-    setLineColor: (color: string) => void;
-    setLineWidth: (width: number) => void;
     sessionId: string;
     canvasRef: React.RefObject<HTMLCanvasElement | null>;
+
     handleFullErase: () => void;
-    handleSave: () => void;
     handleLoad: () => void;
+    handleSave: () => void;
     setSelectedShape: (shape: string | null) => void;
+    setLineColor: (color: string) => void;
+    setLineWidth: (width: number) => void;
 }
 
 const Menu: React.FC<MenuProps> = ({ setLineColor, setLineWidth, sessionId, handleFullErase, handleSave, handleLoad, setSelectedShape}) => {
+    // STATES
+    const [activeShape, setActiveShape] = useState<string | null>(null);
+    const [isColorActive, setIsColorActice] = useState(true);
+    const [isEraserActive, setIsEraserActive] = useState(false);
+    const [selectedWidth, setSelectedWidth] = useState<number | null>(null);
     const [showShapeMenu,setShowShapeMenu] = useState(false);
+    
+    // VARIABLES
     const sizes = [
         { label: "small", value: 3 },
         { label: "medium", value: 8 },
         { label: "large", value: 15 },
     ];
 
-    const handleEraser = () => {
-        setLineColor("white"); 
-    };
-
-    const toggleShapeMenu = () => {
-        setShowShapeMenu(prev => !prev);
+    const handleColor = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setIsColorActice(true);
+        setIsEraserActive(false);
+        setLineColor(e.target.value)
     }
 
-    const selectShape = (shape: string)=>{
-        setSelectedShape(shape);
-        setShowShapeMenu(false);
-        // console.log(selectedShape);
+    const handleEraser = () => {
+        setLineColor("white"); 
+        setIsEraserActive(true);
+        setIsColorActice(false);
+        setActiveShape(null); // Deselect shapes
     };
 
     // Function to generate a shareable URL and display the QR code inside the modal
     const handleShareClick = () => {
         const shareableUrl = `https://main.d3nwftw9t1phgg.amplifyapp.com/whiteboard?sessionId=${sessionId}`;
-        //const shareableUrl = `http://localhost:5173/whiteboard?sessionId=${sessionId}`;
-        // console.log(sessionId); // This is NOT NULL
         // Construct QR code API URL
         const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(shareableUrl)}`;
     
@@ -101,52 +107,75 @@ const Menu: React.FC<MenuProps> = ({ setLineColor, setLineWidth, sessionId, hand
         });
     };
 
+    const handleSizeClick = (value: number) => {
+        setLineWidth(value);
+        setSelectedWidth(value);
+        setIsEraserActive(false); // Deselect eraser if switching tools
+    };
+
+    const selectShape = (shape: string) => {
+        setSelectedShape(shape);
+        setActiveShape(shape);
+        setIsEraserActive(false); // Deselect eraser
+        setShowShapeMenu(false);
+    };
+
+    const toggleShapeMenu = () => {
+        setShowShapeMenu(prev => !prev);
+    }
+
     return (
-        <div className="Menu">
-            <div className="color-picker">
+        <div className="menu">
+            <div className={`color-picker ${isColorActive === true ? "highlighted" : ""}`}>
                 <input
                     type="color"
-                    onChange={(e) => setLineColor(e.target.value)}
+                    onChange={(e) => handleColor(e)}
                     title="Color Picker"
                 />
             </div>
             <div className="size-picker">
                 <div className="size-buttons">
-                    {sizes.map((size) => (
-                        <button
-                            key={size.label}
-                            onClick={() => setLineWidth(size.value)}
-                            className="circle-button"
-                            style={{
-                                width: `${size.value * 2}px`,
-                                height: `${size.value * 2}px`,
-                            }}
-                            aria-label={size.label}
-                        />
-                    ))}
+                {sizes.map((size) => (
+                    <button
+                        key={size.label}
+                        onClick={() => handleSizeClick(size.value)}
+                        className={`circle-button ${selectedWidth === size.value ? "highlighted" : ""}`}
+                        style={{
+                            width: `${size.value * 2}px`,
+                            height: `${size.value * 2}px`,
+                        }}
+                        aria-label={size.label}
+                    />
+                ))}
                 </div>
             </div>
             <div className="shapes-wrapper">
-                <button className="shapes-button" title="Shapes" onClick={toggleShapeMenu}>
+                <button className="button-base shapes-button" title="Shapes" onClick={toggleShapeMenu}>
                     <i className="fas fa-shapes"></i>
                 </button>
 
                 {showShapeMenu && (
                     <div className="shape-dropdown">
-                        <button onClick={() => selectShape("rectangle")}><i className="fa fa-square" style={{ color: "#454342" }}/></button>
-                        <button onClick={() => selectShape("circle")}><i className="fa fa-circle" style={{ color: "#454342" }}/></button>
-                        <button onClick={() => selectShape("triangle")}><i className="fa fa-play" style={{ color: "#454342" }}/></button>
+                        <button onClick={() => selectShape("rectangle")} className={activeShape === "rectangle" ? "highlighted" : ""}>
+                            <i className="fa fa-square" style={{ color: "#454342" }}/>
+                        </button>
+                        <button onClick={() => selectShape("circle")} className={activeShape === "circle" ? "highlighted" : ""}>
+                            <i className="fa fa-circle" style={{ color: "#454342" }}/>
+                        </button>
+                        <button onClick={() => selectShape("triangle")} className={activeShape === "triangle" ? "highlighted" : ""}>
+                            <i className="fa fa-play" style={{ color: "#454342" }}/>
+                        </button>
                         
                     </div>
                 )}
             </div>
             <div>
-                <button className="eraser-button" onClick={handleEraser} title="Eraser">
+                <button className={`button-base eraser-button ${isEraserActive ? "highlighted" : ""}`} onClick={handleEraser} title="Eraser">
                     <i className="fa fa-eraser" />
                 </button>
             </div>
             <div>
-                <button className="erase-all-button" onClick={handleFullErase} title="Clear">
+                <button className="button-base erase-all-button" onClick={handleFullErase} title="Clear">
                     <i className="fa fa-bomb"/>
                 </button>
             </div>
@@ -154,15 +183,15 @@ const Menu: React.FC<MenuProps> = ({ setLineColor, setLineWidth, sessionId, hand
 
             </div>
             <div className="save-load-container">
-                <button className="save-button"  title="Save" onClick={handleSave}>
+                <button className="button-base save-button"  title="Save" onClick={handleSave}>
                     <i className="fas fa-save"></i>
                 </button>
-                <button className="load-button" title="Load" onClick={handleLoad}>
+                <button className="button-base load-button" title="Load" onClick={handleLoad}>
                     <i className="fa fa-upload" aria-hidden="true"/>
                 </button>
             </div>
             <div>
-            <button className="share-button" onClick={handleShareClick} title="Share">
+            <button className="button-base share-button" onClick={handleShareClick} title="Share">
                 <i className="fas fa-share-square"></i>                
             </button>
             </div>
