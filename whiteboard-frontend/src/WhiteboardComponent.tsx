@@ -4,11 +4,6 @@ import "./App.css";
 import { useNavigate } from "react-router-dom";
 
 // INTERFACE
-
-interface CursorData {
-    userId: string;
-    position: { x: number; y: number };
-}
 interface DrawingData {
     userId: string;
     path: { x: number; y: number }[];
@@ -411,18 +406,6 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
         });
     };
 
-    function useThrottledState<T>(initialValue: T, delay: number) {
-        const [state, setState] = useState(initialValue);
-        const lastUpdate = useRef(0);
-        const throttledSetState = (value: T) => {
-            const now = Date.now();
-            if (now - lastUpdate.current > delay) {
-            setState(value);
-            lastUpdate.current = now;
-            }
-        };
-        return [state, throttledSetState] as const;
-    }
 
     return (
         <div className="App">
