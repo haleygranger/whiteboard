@@ -3,7 +3,19 @@ import Menu from "./Menu";
 import "./App.css";
 import { useNavigate } from "react-router-dom";
 
-// Define event types for drawing events
+// INTERFACE
+
+interface CursorData {
+    userId: string;
+    position: { x: number; y: number };
+}
+interface DrawingData {
+    userId: string;
+    path: { x: number; y: number }[];
+    filteredPath : {x:number; y:number}[];
+    lineWidth: number;
+    lineColor: string;
+}
 interface MouseEventWithOffset extends React.MouseEvent<HTMLCanvasElement> {
     nativeEvent: MouseEvent;
 }
@@ -18,19 +30,6 @@ interface WhiteboardProps {
     isAuth: boolean;
 }
 
-interface DrawingData {
-    userId: string;
-    path: { x: number; y: number }[];
-    filteredPath : {x:number; y:number}[];
-    lineWidth: number;
-    lineColor: string;
-}
-
-interface CursorData {
-    userId: string;
-    position: { x: number; y: number };
-}
-
 const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isAuth }) => {
     // CONSTANTS
     const MESSAGE_SEND_TIME = 50;
@@ -40,18 +39,19 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
 
     // REFERENCES
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const cursorPositionRef = useRef<{ x: number; y: number } | null>(null);
+    const cursorRef = useRef<HTMLDivElement | null>(null);
     const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
     const pathBuffer = useRef<{ x: number; y: number }[]>([]);
+    const pathRef = useRef<{ x: number; y: number }[]>([]);
+    const sentTimeRef = useRef<number>(Date.now());
 
     // STATES
-    const [cursorPosition, setCursorPosition] = useState<{ x: number; y: number } | null>(null);
     const [isDrawing, setIsDrawing] = useState<boolean>(false);
     const [lineColor, setLineColor] = useState<string>("black");
     const [lineWidth, setLineWidth] = useState<number>(8);
-    const [otherCursors, setOtherCursors] = useState<CursorData[]>([]);
-    const [path, setPath] = useState<{ x: number; y: number }[]>([]); //console.log(path);
+    const [otherCursors, setOtherCursors] = useState<Record<string, { x: number; y: number }>>(() => ({}));
     const [selectedShape,setSelectedShape] = useState<string|null>(null);
-    const [sentTime, setSentTime] = useState<number>(Date.now());
     const [startPoint, setStartPoint] =  useState<{ x: number; y: number } | null>(null);
     const [ws, setWs] = useState<WebSocket | null>(null);
 
@@ -99,31 +99,15 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
                 console.log(data);
                 // DRAWING DATA
                 if (data.drawingData) {
-                    //console.log("Received previous drawings:", data.drawingData);
+                    console.log("Received previous drawings:", data.drawingData);
                     updateCanvasFromServer(data.drawingData); // Call drawing function
                 }
                 // CURSOR DATA
                 if (data.position) {
-                    // Handle cursor update
-                    setOtherCursors((prevCursors) => {
-                        const updatedCursors = [...prevCursors];
-                        const existingCursorIndex = updatedCursors.findIndex(
-                            (cursor) => cursor.userId === data.userId
-                        );
-                        if (existingCursorIndex !== -1) {
-                            updatedCursors[existingCursorIndex] = {
-                                userId: data.userId,
-                                position: data.position,  // Use position from the message
-                            };
-                        } else {
-                            updatedCursors.push({
-                                userId: data.userId,
-                                position: data.position,  // Add new cursor with userId and position
-                            });
-                        }
-                        return updatedCursors;
-                    });
-                    // console.log("Updated Other Cursors:", otherCursors);
+                    setOtherCursors((prevCursors) => ({
+                        ...prevCursors,
+                        [data.userId]: data.position, // Add or update the userId's position
+                    }));
                 }
                 // 
                 if (data && Array.isArray(data.path)) {
@@ -144,7 +128,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
                     const ctx = canvasRef.current?.getContext("2d");
                     if (ctx && canvasRef.current) {
                         ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-                        setPath([]); // Clear local path
+                        pathRef.current = []; // Clear local path
                     }
                 }
             } catch (error) {
@@ -174,7 +158,6 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
         updateCursor(offset);
         // 
         pathBuffer.current.push(offset); // Storing path in the buffer
-        setPath((prev) => [...prev, offset]);
         sendDrawing(offset);
     };
 
@@ -237,11 +220,10 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
                 sessionId,
                 messageType: "shape",
                 shapeData,
-                cursorData :
-                    {
-                        position: end,
-                        userId
-                    },
+                cursorData: {
+                    position: cursorPositionRef.current,
+                    userId,
+                }
             })); // Sending drawing and cursor data
 
             updateCursor(end);
@@ -290,12 +272,12 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
         if (canvasRef.current && ctxRef.current) {
             const ctx = ctxRef.current;
             ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height); // Clear the canvas
-            setPath([]);
+            pathRef.current = [];
         }
     };
 
     const handleSave = async () => {
-        if (isAuth){
+        if (!isAuth){
             try {
                 const requestBody = {
                     userId: userId,
@@ -331,7 +313,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
     };
 
     const handleLoad = async () =>{
-        if (isAuth){
+        if (!isAuth){
             navigate(`/load-saved-boards?sessionId=${sessionId}&userId=${encodeURIComponent(userId)}`);
         }
         else{
@@ -342,8 +324,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
     const sendDrawing = (offset: {x: number; y: number;}) =>
         {
             updateCursor(offset);
-            const position = cursorPosition;
-            if (ws && Date.now() - sentTime > MESSAGE_SEND_TIME && pathBuffer.current.length > 0) {
+            if (ws && Date.now() - sentTimeRef.current > MESSAGE_SEND_TIME && pathBuffer.current.length > 0) {
                 ws.send(
                     JSON.stringify({
                         sessionId,
@@ -354,20 +335,26 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
                             lineColor,
                         },
                         cursorData: {
-                            position,
+                            position: cursorPositionRef.current,
                             userId,
                         }
                         
                     })
                 );
                 pathBuffer.current = [offset];
-                setSentTime(Date.now());
+                sentTimeRef.current = Date.now();
             }
         }
 
     const startDrawing = (e: MouseEventWithOffset | TouchEventWithOffset): void => {
         const offset = getOffset(e);
         updateCursor(offset);
+
+        const ctx = canvasRef.current?.getContext("2d");
+        if (!ctx) return; // No drawing if it doesn't exist
+
+        ctx.strokeStyle = lineColor;
+        ctx.lineWidth = lineWidth;
         
         if (selectedShape){
             setStartPoint(offset); // Get start of shape
@@ -381,7 +368,11 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
     };
 
     const updateCursor = (position: { x: number; y: number }) => {
-        setCursorPosition(position);
+        cursorPositionRef.current = position;
+        if (cursorRef.current) {
+            cursorRef.current.style.left = `${position.x}px`;
+            cursorRef.current.style.top = `${position.y + 120}px`;
+        }
     };
 
     const updateCanvasFromServer = (drawingUsers: DrawingData[]) => {
@@ -420,6 +411,19 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
         });
     };
 
+    function useThrottledState<T>(initialValue: T, delay: number) {
+        const [state, setState] = useState(initialValue);
+        const lastUpdate = useRef(0);
+        const throttledSetState = (value: T) => {
+            const now = Date.now();
+            if (now - lastUpdate.current > delay) {
+            setState(value);
+            lastUpdate.current = now;
+            }
+        };
+        return [state, throttledSetState] as const;
+    }
+
     return (
         <div className="App">
             <div className="draw-area">
@@ -441,31 +445,30 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
                     onTouchEnd={endDrawing}
                     onTouchMove={draw}
                     ref={canvasRef}
-                    width={1280}
-                    height={720}
+                    width={window.innerWidth}
+                    height={window.innerHeight}
                 />
-                {isDrawing && cursorPosition && (
+                {isDrawing && cursorPositionRef.current && (
                     <div
                         className="cursor"
                         style={{
-                            left: `${cursorPosition.x}px`,
-                            top: `${cursorPosition.y + 120}px`,
+                            left: `${cursorPositionRef.current.x}px`,
+                            top: `${cursorPositionRef.current.y + 120}px`,
                         }}
                     >
                         {userId}
                     </div>
                 )}
-                {otherCursors.map((cursor) => (
+                {Object.entries(otherCursors).map(([id, position]) => (
                     <div
-                        key={cursor.userId}
+                        key={id}
                         className="other-cursor"
                         style={{
-                            left: `${cursor.position.x}px`,
-                            top: `${cursor.position.y + 120}px`,
-                            color: "blue", 
-                        }}
-                    >
-                        {cursor.userId}
+                            left: `${position.x}px`,
+                            top: `${position.y + 120}px`,
+                            color: "blue",
+                        }}>
+                        {id}
                     </div>
                 ))}
             </div>

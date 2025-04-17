@@ -56,13 +56,40 @@ const Loadboards: React.FC = () => {
     const handleBack = () => {
         navigate(`/whiteboard?sessionId=${sessionId}&userId=${encodeURIComponent(userId)}`);
     };
+    
+    const handleDelete = async () => {
+        if (selectedWhiteboard) {
+            const requestBody = { sessionId: selectedWhiteboard }; // <-- fix here
+            try {
+                const response = await fetch("https://qdeqrga8ac.execute-api.us-east-2.amazonaws.com/delete-whiteboard", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(requestBody),
+                });
+    
+                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+    
+                console.log(await response.json());
+        
+                setSavedWhiteboards(prev => prev.filter(wb => wb.sessionId.S !== selectedWhiteboard));
+                setSelectedWhiteboard(null);
+    
+            } catch (err) {
+                console.error("Error deleting whiteboard", err);
+                setError("Failed to delete whiteboard.");
+            }
+        } else {
+            setError("Please select a whiteboard.");
+        }
+    };
 
     const handleOpen = async () => {
+        // console.log("selectedWhiteboard: " + selectedWhiteboard);
         if (selectedWhiteboard) {
             const selectedBoard = savedWhiteboards.find(
                 (whiteboard) => whiteboard.sessionId.S === selectedWhiteboard
             );
-
+            
             if (selectedBoard) {
                 const drawingData = selectedBoard.drawingData;
                 const requestBody = { sessionId, drawingData };
@@ -134,6 +161,7 @@ const Loadboards: React.FC = () => {
             <div>
                 <button onClick={handleBack}>Back</button>
                 <button onClick={handleOpen}>Open</button>
+                <button onClick={handleDelete}>Delete</button>
             </div>
         </div>
     );
