@@ -1,35 +1,45 @@
+// IMPORTS
 import React, { useEffect, useState } from "react";
 import WhiteboardComponent from "./WhiteboardComponent";
 import { useLocation, useNavigate } from "react-router-dom";
 
+// PROPS
 interface WhiteboardProps {
   isAuth: boolean;
 }
 
 const Whiteboard: React.FC<WhiteboardProps> = ({ isAuth }) => {
+  
+  // HOOKS
   const location = useLocation();
-  const params = new URLSearchParams(location.search);
   const navigate = useNavigate();
-
+  const params = new URLSearchParams(location.search);
+  
+  // COMPONENT STATES
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
+    // Get sessionId from URL
     const urlSessionId = params.get("sessionId");
     console.log("URL Session ID:", urlSessionId); // Check if sessionId is being passed correctly
 
+    // Check if sessionId is stored in local storage
     const storedSessionId = localStorage.getItem("sessionId");
     const urlUserId = params.get("userId");
     const storedUserId = localStorage.getItem("userId");
 
-    // Check if sessionId exists, otherwise redirect to GuestSignInSession
-    if (!urlSessionId && !storedSessionId) {
+    // DELETE
+    if (!urlSessionId) {
+        console.log("Getting here: !urlSessionId.")
         navigate("/GuestSignInSession");
         return;
     }
 
-    if (!urlUserId && !storedUserId) {
-        navigate(`/GuestSignInSession?sessionId=${urlSessionId}`); //This is for when user joins thru url
+    // In instances of a user sharing the URL the userId wont exist.
+    // Check if sessionId exists, otherwise redirect to GuestSignInSession
+    if (!urlUserId) {
+        navigate(`/GuestSignInSession?sessionId=${urlSessionId}`);
         return;
     }
 

@@ -3,14 +3,15 @@ import { useState, useEffect } from "react";
 import "./App.css";
 
 function GuestSignInWithSession() {
+
+    // HOOKS
     const navigate = useNavigate();
     const location = useLocation();
     const params = new URLSearchParams(location.search);
     
+    // STATES
     const [guestUsername, setGuestUsername] = useState("");
     const [sessionId, setSessionId] = useState(""); console.log(sessionId);
-
-    console.log("Handling Guest Sign In...");
 
     // Ensure we correctly set sessionId from URL/localStorage before allowing a user to join
     useEffect(() => {
@@ -26,9 +27,10 @@ function GuestSignInWithSession() {
     }, []); // Only run once on mount
 
     const handleJoin = async () => {
-        // Use the sessionId from params or localStorage directly instead of relying on state
-        const urlSessionId = params.get("sessionId");
+        // Use the sessionId from params or localStorage
         const storedSessionId = localStorage.getItem("sessionId");
+        const urlSessionId = params.get("sessionId");
+
         const finalSessionId = urlSessionId || storedSessionId;
 
         if (!finalSessionId) {
@@ -39,8 +41,7 @@ function GuestSignInWithSession() {
             alert("Please enter a username to continue.");
             return;
         }
-        
-        console.log(`Joining session: ${finalSessionId} as ${guestUsername}`);
+
         navigate(`/whiteboard?sessionId=${finalSessionId}&userId=${encodeURIComponent(guestUsername)}`);
     };
 

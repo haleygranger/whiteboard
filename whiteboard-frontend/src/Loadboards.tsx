@@ -3,36 +3,93 @@ import { useNavigate, useLocation } from "react-router-dom";
 
 interface Whiteboard {
     sessionId: { S: string };
-    drawingData: any; // Define a better type here based on your drawing data
+    drawingData: any; // Define a better type here based on drawing data
     timestamp: { N: string };
 }
 
 const Loadboards: React.FC = () => {
+
+    // HOOKS
     const navigate = useNavigate();
     const location = useLocation();
     const queryParams = new URLSearchParams(location.search);
-
     const sessionId = queryParams.get("sessionId") ?? "";
     const userId = queryParams.get("userId") ?? "";
+
+    // STATES
     const [savedWhiteboards, setSavedWhiteboards] = useState<Whiteboard[]>([]);
     const [selectedWhiteboard, setSelectedWhiteboard] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null); // Error state to display error messages
 
+    useEffect(() => {
+        if (userId) {
+            getSavedWhiteboards();
+        }
+    }, [userId]);
+
+    const getSavedWhiteboards = async () => {
+        try {
+            setLoading(true);
+            setError(null); // Reset error state before the request
+
+            const requestBody = { userId };
+            const response = await fetch("https://qdeqrga8ac.execute-api.us-east-2.amazonaws.com/load-whiteboard", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(requestBody),
+            });
+
+            if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+
+            const responseData = await response.json();
+            const whiteboards: Whiteboard[] = responseData.data;
+            setSavedWhiteboards(whiteboards);
+        } catch (error) {
+            console.error("Error fetching whiteboards:", error);
+            setError("Failed to load saved whiteboards.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleBack = () => {
         navigate(`/whiteboard?sessionId=${sessionId}&userId=${encodeURIComponent(userId)}`);
     };
-
-    const handleRadioChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setSelectedWhiteboard(event.target.value);
+    
+    const handleDelete = async () => {
+        if (selectedWhiteboard) {
+            const requestBody = { sessionId: selectedWhiteboard }; // <-- fix here
+            try {
+                const response = await fetch("https://qdeqrga8ac.execute-api.us-east-2.amazonaws.com/delete-whiteboard", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(requestBody),
+                });
+    
+                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+    
+                console.log(await response.json());
+        
+                setSavedWhiteboards(prev => prev.filter(wb => wb.sessionId.S !== selectedWhiteboard));
+                setSelectedWhiteboard(null);
+    
+            } catch (err) {
+                console.error("Error deleting whiteboard", err);
+                setError("Failed to delete whiteboard.");
+            }
+        } else {
+            setError("Please select a whiteboard.");
+        }
     };
 
     const handleOpen = async () => {
+        // console.log("selectedWhiteboard: " + selectedWhiteboard);
         if (selectedWhiteboard) {
             const selectedBoard = savedWhiteboards.find(
                 (whiteboard) => whiteboard.sessionId.S === selectedWhiteboard
             );
-
+            
             if (selectedBoard) {
                 const drawingData = selectedBoard.drawingData;
                 const requestBody = { sessionId, drawingData };
@@ -62,36 +119,9 @@ const Loadboards: React.FC = () => {
         }
     };
 
-    const getSavedWhiteboards = async () => {
-        try {
-            setLoading(true);
-            setError(null); // Reset error state before the request
-
-            const requestBody = { userId };
-            const response = await fetch("https://qdeqrga8ac.execute-api.us-east-2.amazonaws.com/load-whiteboard", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(requestBody),
-            });
-
-            if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-
-            const responseData = await response.json();
-            const whiteboards: Whiteboard[] = responseData.data;
-            setSavedWhiteboards(whiteboards);
-        } catch (error) {
-            console.error("Error fetching whiteboards:", error);
-            setError("Failed to load saved whiteboards.");
-        } finally {
-            setLoading(false);
-        }
+    const handleRadioChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setSelectedWhiteboard(event.target.value);
     };
-
-    useEffect(() => {
-        if (userId) {
-            getSavedWhiteboards();
-        }
-    }, [userId]);
 
     return (
         <div className="whiteboard-container">
@@ -131,6 +161,7 @@ const Loadboards: React.FC = () => {
             <div>
                 <button onClick={handleBack}>Back</button>
                 <button onClick={handleOpen}>Open</button>
+                <button onClick={handleDelete}>Delete</button>
             </div>
         </div>
     );
