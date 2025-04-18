@@ -43,6 +43,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
 
     // STATES
     const [isDrawing, setIsDrawing] = useState<boolean>(false);
+    const [isShapesActive, setIsShapesActive] = useState(false);
     const [lineColor, setLineColor] = useState<string>("black");
     const [lineWidth, setLineWidth] = useState<number>(8);
     const [otherCursors, setOtherCursors] = useState<Record<string, { x: number; y: number }>>(() => ({}));
@@ -192,6 +193,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
     
         ctx.stroke();
         updateCursor(end); // Update the cursor
+        setIsShapesActive(false);
     };
 
     const endDrawing = (e?: MouseEventWithOffset | TouchEventWithOffset): void => {
@@ -419,6 +421,8 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
                     handleSave={handleSave}
                     handleLoad={handleLoad}
                     setSelectedShape={setSelectedShape}
+                    setIsShapesActive={setIsShapesActive}
+                    isShapesActive={isShapesActive}
                 />
                 <canvas
                     onMouseDown={startDrawing}
