@@ -7,21 +7,22 @@ import '@fortawesome/fontawesome-free/css/all.min.css';
 interface MenuProps {
     sessionId: string;
     canvasRef: React.RefObject<HTMLCanvasElement | null>;
+    isShapesActive : boolean;
 
     handleFullErase: () => void;
     handleLoad: () => void;
     handleSave: () => void;
-    setSelectedShape: (shape: string | null) => void;
+    setIsShapesActive: (b:boolean) => void;
     setLineColor: (color: string) => void;
     setLineWidth: (width: number) => void;
+    setSelectedShape: (shape: string | null) => void;
 }
 
-const Menu: React.FC<MenuProps> = ({ setLineColor, setLineWidth, sessionId, handleFullErase, handleSave, handleLoad, setSelectedShape}) => {
+const Menu: React.FC<MenuProps> = ({ setLineColor, setLineWidth, sessionId, handleFullErase, handleSave, handleLoad, setSelectedShape, setIsShapesActive, isShapesActive}) => {
     // STATES
     const [activeShape, setActiveShape] = useState<string | null>(null);
-    const [isColorActive, setIsColorActice] = useState(true);
     const [isEraserActive, setIsEraserActive] = useState(false);
-    const [selectedWidth, setSelectedWidth] = useState<number | null>(null);
+    const [selectedWidth, setSelectedWidth] = useState<number | null>(8);
     const [showShapeMenu,setShowShapeMenu] = useState(false);
     
     // VARIABLES
@@ -32,16 +33,16 @@ const Menu: React.FC<MenuProps> = ({ setLineColor, setLineWidth, sessionId, hand
     ];
 
     const handleColor = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setIsColorActice(true);
         setIsEraserActive(false);
+        setIsShapesActive(false);
         setLineColor(e.target.value)
     }
 
     const handleEraser = () => {
         setLineColor("white"); 
+        setActiveShape(null);
         setIsEraserActive(true);
-        setIsColorActice(false);
-        setActiveShape(null); // Deselect shapes
+        setIsShapesActive(false);
     };
 
     // Function to generate a shareable URL and display the QR code inside the modal
@@ -110,13 +111,13 @@ const Menu: React.FC<MenuProps> = ({ setLineColor, setLineWidth, sessionId, hand
     const handleSizeClick = (value: number) => {
         setLineWidth(value);
         setSelectedWidth(value);
-        setIsEraserActive(false); // Deselect eraser if switching tools
+        setIsEraserActive(false);
     };
 
     const selectShape = (shape: string) => {
+        setIsShapesActive(true);
         setSelectedShape(shape);
         setActiveShape(shape);
-        setIsEraserActive(false); // Deselect eraser
         setShowShapeMenu(false);
     };
 
@@ -126,7 +127,7 @@ const Menu: React.FC<MenuProps> = ({ setLineColor, setLineWidth, sessionId, hand
 
     return (
         <div className="menu">
-            <div className={`color-picker ${isColorActive === true ? "highlighted" : ""}`}>
+            <div className={`color-picker`}>
                 <input
                     type="color"
                     onChange={(e) => handleColor(e)}
@@ -150,7 +151,7 @@ const Menu: React.FC<MenuProps> = ({ setLineColor, setLineWidth, sessionId, hand
                 </div>
             </div>
             <div className="shapes-wrapper">
-                <button className="button-base shapes-button" title="Shapes" onClick={toggleShapeMenu}>
+                <button className={`button-base shapes-button ${isShapesActive ? "highlighted" : ""}`} title="Shapes" onClick={toggleShapeMenu}>
                     <i className="fas fa-shapes"></i>
                 </button>
 
