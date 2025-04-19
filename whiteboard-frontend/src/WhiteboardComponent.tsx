@@ -4,13 +4,22 @@ import "./App.css";
 import { useNavigate } from "react-router-dom";
 
 // INTERFACE
-interface DrawingData {
-    userId: string;
-    path: { x: number; y: number }[];
-    filteredPath : {x:number; y:number}[];
-    lineWidth: number;
-    lineColor: string;
-}
+export type DrawingData = 
+    | {
+        type: "drawing";
+        path: { x: number; y: number }[];
+        lineColor?: string;
+        lineWidth?: number;
+    }
+    | {
+        type: "shape";
+        shapeType: "rectangle" | "circle"; // you can add more shapes later
+        start: { x: number; y: number };
+        end: { x: number; y: number };
+        lineColor?: string;
+        lineWidth?: number;
+    };
+
 interface MouseEventWithOffset extends React.MouseEvent<HTMLCanvasElement> {
     nativeEvent: MouseEvent;
 }
@@ -118,6 +127,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
                     const lineColorNew = data.shapeData.lineColor;
                     console.log(startPointNew, endNew, selectedShapeNew);
                     drawShape(startPointNew, endNew, selectedShapeNew, lineColorNew, lineWidthNew);
+                    updateCanvasFromServer(data.shapeData);
                 }
                 // CLEAR
                 else if (data.erase) {
@@ -274,7 +284,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
     };
 
     const handleSave = async () => {
-        if (isAuth){
+        if (!isAuth){
             try {
                 const requestBody = {
                     userId: userId,
@@ -310,7 +320,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
     };
 
     const handleLoad = async () =>{
-        if (isAuth){
+        if (!isAuth){
             navigate(`/load-saved-boards?sessionId=${sessionId}&userId=${encodeURIComponent(userId)}`);
         }
         else{
@@ -373,20 +383,44 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
     };
 
     const updateCanvasFromServer = (drawingUsers: DrawingData[]) => {
+        console.log("Drawing data", drawingUsers);
         const ctx = canvasRef.current?.getContext("2d");
         if (!ctx) return; // If canvas doesn't exist - don't update
     
-        drawingUsers.forEach((userStroke) => {
-            if (userStroke.path && Array.isArray(userStroke.path)) {
-                ctx.strokeStyle = userStroke.lineColor || "black";
-                ctx.lineWidth = userStroke.lineWidth || 2;
+        drawingUsers.forEach((item) => {
+            if (item.type === "shape") {
+                // Handle shapes (rectangles, circles, etc.)
+                ctx.strokeStyle = item.lineColor || "black";
+                ctx.lineWidth = item.lineWidth || 2;
+    
+                const startX = item.start?.x ?? 0;
+                const startY = item.start?.y ?? 0;
+                const endX = item.end?.x ?? 0;
+                const endY = item.end?.y ?? 0;
+    
+                const width = endX - startX;
+                const height = endY - startY;
+    
+                ctx.beginPath();
+                if (item.shapeType === "rectangle") {
+                    ctx.strokeRect(startX, startY, width, height);
+                } else if (item.shapeType === "circle") {
+                    const radius = Math.sqrt(width * width + height * height);
+                    ctx.arc(startX, startY, radius, 0, 2 * Math.PI);
+                    ctx.stroke();
+                }
+                ctx.closePath();
+    
+            } else if (item.type === "drawing" && item.path && Array.isArray(item.path)) {
+                // Handle freehand drawings
+                ctx.strokeStyle = item.lineColor || "black";
+                ctx.lineWidth = item.lineWidth || 2;
                 ctx.beginPath();
     
-                let isNewStroke = true; // Flag to start a new path when needed
+                let isNewStroke = true;
     
-                userStroke.path.forEach((point: { x: number; y: number }) => {
+                item.path.forEach((point: { x: number; y: number }) => {
                     if (point.x === -1 && point.y === -1) {
-                        // Breakpoint detected: Close the current path and start a new one
                         ctx.stroke();
                         ctx.beginPath();
                         isNewStroke = true;
@@ -403,10 +437,10 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
                 ctx.stroke();
                 ctx.closePath();
             } else {
-                console.error("Invalid path data:", userStroke.path);
+                console.error("Invalid item received:", item);
             }
         });
-    };
+    };    
 
 
     return (
