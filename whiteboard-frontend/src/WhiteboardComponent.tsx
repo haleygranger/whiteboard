@@ -388,6 +388,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
         if (!ctx) return; // If canvas doesn't exist - don't update
     
         drawingUsers.forEach((item) => {
+            //console.log("ITEM: ",item);
             if (item.type === "shape") {
                 // Handle shapes (rectangles, circles, etc.)
                 ctx.strokeStyle = item.lineColor || "black";
@@ -411,7 +412,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
                 }
                 ctx.closePath();
     
-            } else if (item.type === "drawing" && item.path && Array.isArray(item.path)) {
+            } else if (item.path && Array.isArray(item.path)) {
                 // Handle freehand drawings
                 ctx.strokeStyle = item.lineColor || "black";
                 ctx.lineWidth = item.lineWidth || 2;
