@@ -101,7 +101,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
 
             try {
                 const data = JSON.parse(event.data);
-                console.log(data);
+                console.log("data: ", data);
                 // DRAWING DATA
                 if (data.drawingData) {
                     console.log("Received previous drawings:", data.drawingData);
@@ -113,6 +113,15 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
                         ...prevCursors,
                         [data.userId]: data.position, // Add or update the userId's position
                     }));
+                }
+                // USER DISCONNECT
+                if (data.type == "user-disconnect")
+                {
+                    setOtherCursors((prevCursors) => {
+                        const updatedCursors = { ...prevCursors };
+                        delete updatedCursors[data.userId]; // Remove the disconnected user's cursor
+                        return updatedCursors;
+                    });
                 }
                 // 
                 if (data && Array.isArray(data.path)) {
