@@ -11,7 +11,7 @@ function GuestSignInWithSession() {
     
     // STATES
     const [guestUsername, setGuestUsername] = useState("");
-    const [sessionId, setSessionId] = useState(""); console.log(sessionId);
+    const [sessionId, setSessionId] = useState(""); console.log("sessionId ", sessionId);
 
     // Ensure we correctly set sessionId from URL/localStorage before allowing a user to join
     useEffect(() => {

@@ -8,7 +8,7 @@ function GuestSignIn() {
 
     // STATES
     const [guestUsername, setGuestUsername] = useState("");
-    const [sessionId, setSessionId] = useState(""); console.log(sessionId);
+    const [sessionId, setSessionId] = useState(""); console.log("sessionId ", sessionId);
 
     // Returns sessionId
     const createConnection = async () => {

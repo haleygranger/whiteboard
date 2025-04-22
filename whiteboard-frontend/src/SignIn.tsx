@@ -78,7 +78,7 @@ function SignIn({ setAuthStatus }: { setAuthStatus: (auth: boolean) => void }) {
     });
 
     const data = await response.json();
-    console.log("sessionId from createConnection:", data.sessionId);
+    // console.log("sessionId from createConnection:", data.sessionId);
     return data.sessionId;
   };
 

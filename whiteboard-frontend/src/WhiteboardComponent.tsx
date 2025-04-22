@@ -86,7 +86,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
 
         // ON CONNECTION
         webSocket.onopen = () => {
-            console.log("WebSocket Connected - WB COMPONENT");
+            console.log("WebSocket Connected");
             webSocket.send(
                 JSON.stringify({
                     newUser: true,
@@ -101,10 +101,10 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
 
             try {
                 const data = JSON.parse(event.data);
-                console.log("data: ", data);
+                // console.log("data: ", data);
                 // DRAWING DATA
                 if (data.drawingData) {
-                    console.log("Received previous drawings:", data.drawingData);
+                    // console.log("Received previous drawings:", data.drawingData);
                     updateCanvasFromServer(data.drawingData); // Call drawing function
                 }
                 // CURSOR DATA
@@ -134,7 +134,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
                     const selectedShapeNew = data.shapeData.type;
                     const lineWidthNew = data.shapeData.lineWidth;
                     const lineColorNew = data.shapeData.lineColor;
-                    console.log(startPointNew, endNew, selectedShapeNew);
+                    // console.log(startPointNew, endNew, selectedShapeNew);
                     drawShape(startPointNew, endNew, selectedShapeNew, lineColorNew, lineWidthNew);
                     updateCanvasFromServer(data.shapeData);
                 }
@@ -155,7 +155,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
         // ON LEAVING - DISCONNECTION
         return () => {
             webSocket.close();
-            console.log("Websocket Disconnected - WB COMPONENT");
+            console.log("Websocket Disconnected");
         };
     }, [sessionId, userId]);
 
@@ -392,7 +392,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
     };
 
     const updateCanvasFromServer = (drawingUsers: DrawingData[]) => {
-        console.log("Drawing data", drawingUsers);
+        // console.log("Drawing data", drawingUsers);
         const ctx = canvasRef.current?.getContext("2d");
         if (!ctx) return; // If canvas doesn't exist - don't update
     
