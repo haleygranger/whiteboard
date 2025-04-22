@@ -86,7 +86,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
 
         // ON CONNECTION
         webSocket.onopen = () => {
-            console.log("WebSocket Connected - WB COMPONENT");
+            console.log("WebSocket Connected");
             webSocket.send(
                 JSON.stringify({
                     newUser: true,
@@ -101,10 +101,10 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
 
             try {
                 const data = JSON.parse(event.data);
-                console.log(data);
+                // console.log("data: ", data);
                 // DRAWING DATA
                 if (data.drawingData) {
-                    console.log("Received previous drawings:", data.drawingData);
+                    // console.log("Received previous drawings:", data.drawingData);
                     updateCanvasFromServer(data.drawingData); // Call drawing function
                 }
                 // CURSOR DATA
@@ -113,6 +113,15 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
                         ...prevCursors,
                         [data.userId]: data.position, // Add or update the userId's position
                     }));
+                }
+                // USER DISCONNECT
+                if (data.type == "user-disconnect")
+                {
+                    setOtherCursors((prevCursors) => {
+                        const updatedCursors = { ...prevCursors };
+                        delete updatedCursors[data.userId]; // Remove the disconnected user's cursor
+                        return updatedCursors;
+                    });
                 }
                 // 
                 if (data && Array.isArray(data.path)) {
@@ -125,7 +134,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
                     const selectedShapeNew = data.shapeData.type;
                     const lineWidthNew = data.shapeData.lineWidth;
                     const lineColorNew = data.shapeData.lineColor;
-                    console.log(startPointNew, endNew, selectedShapeNew);
+                    // console.log(startPointNew, endNew, selectedShapeNew);
                     drawShape(startPointNew, endNew, selectedShapeNew, lineColorNew, lineWidthNew);
                     updateCanvasFromServer(data.shapeData);
                 }
@@ -146,7 +155,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
         // ON LEAVING - DISCONNECTION
         return () => {
             webSocket.close();
-            console.log("Websocket Disconnected - WB COMPONENT");
+            console.log("Websocket Disconnected");
         };
     }, [sessionId, userId]);
 
@@ -383,11 +392,12 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
     };
 
     const updateCanvasFromServer = (drawingUsers: DrawingData[]) => {
-        console.log("Drawing data", drawingUsers);
+        // console.log("Drawing data", drawingUsers);
         const ctx = canvasRef.current?.getContext("2d");
         if (!ctx) return; // If canvas doesn't exist - don't update
     
         drawingUsers.forEach((item) => {
+            //console.log("ITEM: ",item);
             if (item.type === "shape") {
                 // Handle shapes (rectangles, circles, etc.)
                 ctx.strokeStyle = item.lineColor || "black";
@@ -411,7 +421,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
                 }
                 ctx.closePath();
     
-            } else if (item.type === "drawing" && item.path && Array.isArray(item.path)) {
+            } else if (item.path && Array.isArray(item.path)) {
                 // Handle freehand drawings
                 ctx.strokeStyle = item.lineColor || "black";
                 ctx.lineWidth = item.lineWidth || 2;
