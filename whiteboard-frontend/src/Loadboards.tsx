@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 interface Whiteboard {
     sessionId: { S: string };
     drawingData: any; // Define a better type here based on drawing data
-    timestamp: { N: string };
+    timestamp: { S: string };
 }
 
 const Loadboards: React.FC = () => {
@@ -147,7 +147,7 @@ const Loadboards: React.FC = () => {
                                         className="radio-input"
                                     />
                                     <span className="whiteboard-details">
-                                        <strong>Timestamp:</strong> {whiteboard.timestamp.N} <br />
+                                        <strong>Timestamp:</strong> {whiteboard.timestamp.S} <br />
                                         <strong>Session ID:</strong> {whiteboard.sessionId.S}
                                     </span>
                                 </label>
