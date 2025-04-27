@@ -42,13 +42,14 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
     const navigate = useNavigate();
 
     // REFERENCES
-    const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const baseCanvasRef = useRef<HTMLCanvasElement | null>(null);
     const cursorPositionRef = useRef<{ x: number; y: number } | null>(null);
     const cursorRef = useRef<HTMLDivElement | null>(null);
-    const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
+    const ctxRef = useRef<CanvasRenderingContext2D | null>(null); // Look into this
     const pathBuffer = useRef<{ x: number; y: number }[]>([]);
     const pathRef = useRef<{ x: number; y: number }[]>([]);
     const sentTimeRef = useRef<number>(Date.now());
+    const topCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
     // STATES
     const [isDrawing, setIsDrawing] = useState<boolean>(false);
@@ -62,15 +63,22 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
 
     // Initialization when the component mounts
     useEffect(() => {
-        const canvas = canvasRef.current;
-        if (canvas) {
-            const ctx = canvas.getContext("2d");
-            if (ctx) {
-                ctx.lineCap = "round";
-                ctx.lineJoin = "round";
-                ctx.strokeStyle = lineColor;
-                ctx.lineWidth = lineWidth;
-                ctxRef.current = ctx;
+        const baseCanvas = baseCanvasRef.current;
+        const topCanvas = topCanvasRef.current;
+        if (baseCanvas && topCanvas) {
+            const baseCtx = baseCanvas.getContext("2d");
+            const topCtx = topCanvas.getContext("2d");
+            if (baseCtx) {
+                baseCtx.lineCap = "round";
+                baseCtx.lineJoin = "round";
+                baseCtx.strokeStyle = lineColor;
+                baseCtx.lineWidth = lineWidth;
+            }
+            if (topCtx){
+                topCtx.lineCap = "round";
+                topCtx.lineJoin = "round";
+                topCtx.strokeStyle = lineColor;
+                topCtx.lineWidth = lineWidth;
             }
         }
     }, [lineColor, lineWidth]);
@@ -140,9 +148,16 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
                 }
                 // CLEAR
                 else if (data.erase) {
-                    const ctx = canvasRef.current?.getContext("2d");
-                    if (ctx && canvasRef.current) {
-                        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+                    const baseCanvas = baseCanvasRef.current;
+                    const topCanvas = topCanvasRef.current;
+                    if (!baseCanvas || !topCanvas) return;
+
+                    const baseCtx = baseCanvas.getContext("2d");
+                    const topCtx = topCanvas.getContext("2d");
+
+                    if (baseCtx && topCtx) {
+                        baseCtx.clearRect(0, 0, baseCanvas.width, baseCanvas.height);
+                        topCtx.clearRect(0,0,topCanvas.width,topCanvas.height);
                         pathRef.current = []; // Clear local path
                     }
                 }
@@ -161,12 +176,11 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
 
     const draw = (e: MouseEventWithOffset | TouchEventWithOffset): void => {
         // If not drawing or canvas doesn't exist - don't run
-        if (!isDrawing || !ctxRef.current) {
-            return;
-        }
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext("2d");
+        if (!isDrawing) return;
+
+        const topCanvas = topCanvasRef.current;
+        if (!topCanvas) return;
+        const ctx = topCanvas.getContext("2d");
         if (!ctx) return;
 
         ctx.strokeStyle = lineColor;
@@ -226,6 +240,19 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
     const endDrawing = (e?: MouseEventWithOffset | TouchEventWithOffset): void => {
         setIsDrawing(false);
 
+        const topCanvas = topCanvasRef.current;
+        const baseCanvas = baseCanvasRef.current;
+        if (!topCanvas || !baseCanvas) return;
+
+        const baseCtx = baseCanvas.getContext("2d");
+        const topCtx = topCanvas.getContext("2d");
+
+        if (baseCtx && topCtx) {
+            baseCtx.drawImage(topCanvas, 0, 0);
+            topCtx.clearRect(0, 0, topCanvas.width, topCanvas.height);
+            topCtx.closePath();
+        }
+
         // Handling shapes
         if (ws?.readyState === WebSocket.OPEN && ctxRef.current && selectedShape && startPoint && e){
             const end = getOffset(e);
@@ -255,35 +282,30 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
             setStartPoint(null);
             setSelectedShape(null); // Reset after drawing finishes
         }
-
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext("2d");
-
-        if (ctx) {
-            ctx.closePath();
-        }
         
         pathBuffer.current = [];
     };
 
     const getOffset = (e: MouseEventWithOffset | TouchEventWithOffset) => {
-        const canvas = canvasRef.current;
-        if (!canvas) return { x: 0, y: 0 }; // If canvas doesn't exist, don't find offset
-
+        const canvas = topCanvasRef.current;
+        if (!canvas) return { x: 0, y: 0 };
+    
+        const rect = canvas.getBoundingClientRect();
+    
         if ("touches" in e.nativeEvent) {
             const touch = e.nativeEvent.touches[0];
             return {
-                x: touch.clientX - canvas.offsetLeft,
-                y: touch.clientY - canvas.offsetTop,
+                x: touch.clientX - rect.left,
+                y: touch.clientY - rect.top,
             };
         } else {
             return {
-                x: e.nativeEvent.offsetX,
-                y: e.nativeEvent.offsetY,
+                x: e.nativeEvent.clientX - rect.left,
+                y: e.nativeEvent.clientY - rect.top,
             };
         }
     };
+    
 
     const handleFullErase = () => {
         if (ws) {
@@ -297,10 +319,17 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
             );
         }
 
-        if (canvasRef.current && ctxRef.current) {
-            const ctx = ctxRef.current;
-            ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height); // Clear the canvas
-            pathRef.current = [];
+        const baseCanvas = baseCanvasRef.current;
+        const topCanvas = topCanvasRef.current;
+        if (!baseCanvas || !topCanvas) return;
+
+        const baseCtx = baseCanvas.getContext("2d");
+        const topCtx = topCanvas.getContext("2d");
+
+        if (baseCtx && topCtx) {
+            baseCtx.clearRect(0, 0, baseCanvas.width, baseCanvas.height);
+            topCtx.clearRect(0,0,topCanvas.width,topCanvas.height);
+            pathRef.current = []; // Clear local path
         }
     };
 
@@ -378,10 +407,10 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
         const offset = getOffset(e);
         updateCursor(offset);
 
-        const canvas = canvasRef.current;
-        if (!canvas) return;
+        const topCanvas = topCanvasRef.current;
+        if (!topCanvas) return;
 
-        const ctx = canvas.getContext("2d");
+        const ctx = topCanvas.getContext("2d");
         if (!ctx) return; // No drawing if it doesn't exist
 
         ctx.strokeStyle = lineColor;
@@ -402,15 +431,15 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
         cursorPositionRef.current = position;
         if (cursorRef.current) {
             cursorRef.current.style.left = `${position.x}px`;
-            cursorRef.current.style.top = `${position.y + 120}px`;
+            cursorRef.current.style.top = `${position.y }px`;
         }
     };
 
     const updateCanvasFromServer = (drawingUsers: DrawingData[]) => {
         // console.log("Drawing data", drawingUsers);
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext("2d");
+        const baseCanvas = baseCanvasRef.current;
+        if (!baseCanvas) return;
+        const ctx = baseCanvas.getContext("2d");
         if (!ctx) return; // If canvas doesn't exist - don't update
     
         drawingUsers.forEach((item) => {
@@ -472,18 +501,24 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
 
     return (
         <div className="App">
-            <div className="draw-area">
-                <Menu 
+            <Menu 
                     setLineColor={setLineColor} 
                     setLineWidth={setLineWidth} 
                     sessionId={sessionId}
-                    canvasRef={canvasRef} 
+                    canvasRef={baseCanvasRef} 
                     handleFullErase={handleFullErase}
                     handleSave={handleSave}
                     handleLoad={handleLoad}
                     setSelectedShape={setSelectedShape}
                     setIsShapesActive={setIsShapesActive}
                     isShapesActive={isShapesActive}
+                />
+            <div className="draw-area" >
+                <canvas
+                    ref={baseCanvasRef}
+                    width={window.innerWidth}
+                    height={window.innerHeight}
+                    style={{ position: "absolute", top: 0, left: 0, zIndex: 0 }}
                 />
                 <canvas
                     onMouseDown={startDrawing}
@@ -492,16 +527,17 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
                     onTouchStart={startDrawing}
                     onTouchEnd={endDrawing}
                     onTouchMove={draw}
-                    ref={canvasRef}
+                    ref={topCanvasRef}
                     width={window.innerWidth}
                     height={window.innerHeight}
+                    style={{ position: "absolute", top: 0, left: 0, zIndex: 1 }}
                 />
                 {isDrawing && cursorPositionRef.current && (
                     <div
                         className="cursor"
                         style={{
                             left: `${cursorPositionRef.current.x}px`,
-                            top: `${cursorPositionRef.current.y + 120}px`,
+                            top: `${cursorPositionRef.current.y+50}px`,
                         }}
                     >
                         {userId}
@@ -513,7 +549,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
                         className="other-cursor"
                         style={{
                             left: `${position.x}px`,
-                            top: `${position.y + 120}px`,
+                            top: `${position.y+50}px`,
                             color: "blue",
                         }}>
                         {id}

@@ -16,6 +16,7 @@ interface MenuProps {
     setLineColor: (color: string) => void;
     setLineWidth: (width: number) => void;
     setSelectedShape: (shape: string | null) => void;
+    style?: React.CSSProperties;
 }
 
 const Menu: React.FC<MenuProps> = ({ setLineColor, setLineWidth, sessionId, handleFullErase, handleSave, handleLoad, setSelectedShape, setIsShapesActive, isShapesActive}) => {
