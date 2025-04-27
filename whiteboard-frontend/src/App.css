@@ -73,7 +73,6 @@ button:hover{
 .draw-area {
   width: 100vw;
   height: 100vh;
-  border: 2px solid #808080;
   position: relative;
   background-color: white;
 }
@@ -122,7 +121,7 @@ h1{
 
 html, body {
   font-family: Arial, sans-serif;
-  background-color: #f4f4f9;
+  background-color: white;
   color: #333;
   height: 100%;
   margin: 0;
@@ -174,6 +173,7 @@ label {
   margin-top: 15px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   gap: 10px;
+  z-index: 2;
 }
 
 .radio-label {
