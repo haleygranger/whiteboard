@@ -1,6 +1,8 @@
 # Collaborative Whiteboard
 
-A real-time collaborative whiteboard application where users can draw on a shared whiteboard. The apps allows user to create or join a whiteboard session, enabling them to collaberate with others. The whiteboard updates in real time for all connected users allowing for great interaction.
+A real-time collaborative whiteboard application where users can draw on a shared whiteboard. The app allows user to create or join a whiteboard session, enabling them to collaberate with others. The whiteboard updates in real time for all connected users allowing for great interaction.
+
+Try it out: https://main.d3nwftw9t1phgg.amplifyapp.com/
 
 ## Authors
 
@@ -13,7 +15,7 @@ A real-time collaborative whiteboard application where users can draw on a share
 - Low-latency updates via WebSockets
 - Responsive frontend with React
 - Powerful AWS backend
-- Guess or authenticated user experiences
+- Guest or authenticated user experiences
 
 ## Tech Stack
 

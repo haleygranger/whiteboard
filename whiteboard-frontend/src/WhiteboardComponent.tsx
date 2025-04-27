@@ -164,11 +164,19 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
         if (!isDrawing || !ctxRef.current) {
             return;
         }
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+
+        ctx.strokeStyle = lineColor;
+        ctx.lineWidth = lineWidth;
+
         // Get cursor posititon
         const offset = getOffset(e);
         // Move to cursor and draw
-        ctxRef.current.lineTo(offset.x, offset.y);
-        ctxRef.current.stroke();
+        ctx.lineTo(offset.x, offset.y);
+        ctx.stroke();
         // Update cursor label position
         updateCursor(offset);
         // 
@@ -248,8 +256,12 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
             setSelectedShape(null); // Reset after drawing finishes
         }
 
-        if (ctxRef.current) {
-            ctxRef.current.closePath();
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d");
+
+        if (ctx) {
+            ctx.closePath();
         }
         
         pathBuffer.current = [];
@@ -366,7 +378,10 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
         const offset = getOffset(e);
         updateCursor(offset);
 
-        const ctx = canvasRef.current?.getContext("2d");
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
+        const ctx = canvas.getContext("2d");
         if (!ctx) return; // No drawing if it doesn't exist
 
         ctx.strokeStyle = lineColor;
@@ -375,9 +390,9 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
         if (selectedShape){
             setStartPoint(offset); // Get start of shape
         } else {
-            if (ctxRef.current) {
-                ctxRef.current.beginPath();
-                ctxRef.current.moveTo(offset.x, offset.y);
+            if (ctx) {
+                ctx.beginPath();
+                ctx.moveTo(offset.x, offset.y);
             }
             setIsDrawing(true);
         }
@@ -393,7 +408,9 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
 
     const updateCanvasFromServer = (drawingUsers: DrawingData[]) => {
         // console.log("Drawing data", drawingUsers);
-        const ctx = canvasRef.current?.getContext("2d");
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d");
         if (!ctx) return; // If canvas doesn't exist - don't update
     
         drawingUsers.forEach((item) => {
