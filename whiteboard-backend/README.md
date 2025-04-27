@@ -16,11 +16,11 @@ This function runs whenever an authenticated user deletes a saved whiteboard. Us
 
 #### loadWhiteboard.mjs
 
-This runs whenever a user wants to save their whiteboard. All drawing data is saved to the `SavedWhiteboards` table.
+This runs whenever an authenticated user navigates to the screen to load a previous whiteboard. It receives the `userId` from the client. All previous saved whiteboards are retrieved from the `SavedWhiteboards` table that corresponds to the `userId`. All the whiteboards (and the data that corresponds to each whiteboard) are returned as a response to the client.
 
 #### recreateSession.mjs
 
-This runs whenever a new user is trying to access a session that already exists and has been drawn on. The `sessionId` is used to find the session in `WhiteboardSessions`, gather the previous drawing information, and send it back to the user.
+This runs whenever an authenticated user attempts to retrieve a previously saved whiteboard. The function receives the `sessionId` and drawing data from the client. It formats this information into DynamoDB format and puts it into the `WhiteboardDrawings` table.
 
 #### SaveWhiteboard
 
