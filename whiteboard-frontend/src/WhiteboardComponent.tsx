@@ -73,6 +73,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
                 baseCtx.lineJoin = "round";
                 baseCtx.strokeStyle = lineColor;
                 baseCtx.lineWidth = lineWidth;
+                ctxRef.current = baseCtx;
             }
             if (topCtx){
                 topCtx.lineCap = "round";
@@ -175,27 +176,64 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
     }, [sessionId, userId]);
 
     const draw = (e: MouseEventWithOffset | TouchEventWithOffset): void => {
-        // If not drawing or canvas doesn't exist - don't run
-        if (!isDrawing) return;
-
-        const topCanvas = topCanvasRef.current;
-        if (!topCanvas) return;
-        const ctx = topCanvas.getContext("2d");
-        if (!ctx) return;
-
-        ctx.strokeStyle = lineColor;
-        ctx.lineWidth = lineWidth;
-
-        // Get cursor posititon
-        const offset = getOffset(e);
-        // Move to cursor and draw
-        ctx.lineTo(offset.x, offset.y);
-        ctx.stroke();
-        // Update cursor label position
-        updateCursor(offset);
-        // 
-        pathBuffer.current.push(offset); // Storing path in the buffer
-        sendDrawing(offset);
+        if (selectedShape && startPoint) {
+            const topCanvas = topCanvasRef.current;
+            if (!topCanvas) return;
+            const ctx = topCanvas.getContext("2d");
+            if (!ctx) return;
+    
+            const offset = getOffset(e);
+    
+            // Clear the top canvas before drawing preview
+            ctx.clearRect(0, 0, topCanvas.width, topCanvas.height);
+    
+            // Preview the shape
+            ctx.strokeStyle = lineColor;
+            ctx.lineWidth = lineWidth;
+    
+            ctx.beginPath();
+    
+            const width = offset.x - startPoint.x;
+            const height = offset.y - startPoint.y;
+    
+            if (selectedShape === "rectangle") {
+                ctx.rect(startPoint.x, startPoint.y, width, height);
+            } else if (selectedShape === "circle") {
+                const radius = Math.sqrt(width ** 2 + height ** 2) / 2;
+                const centerX = startPoint.x + width / 2;
+                const centerY = startPoint.y + height / 2;
+                ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+            } else if (selectedShape === "triangle") {
+                ctx.moveTo(startPoint.x + width / 2, startPoint.y); // Top
+                ctx.lineTo(startPoint.x, startPoint.y + height);    // Bottom left
+                ctx.lineTo(startPoint.x + width, startPoint.y + height); // Bottom right
+                ctx.closePath();
+            }
+    
+            ctx.stroke();
+    
+            updateCursor(offset);
+        } else {
+            // Default freehand drawing
+            if (!isDrawing) return;
+    
+            const topCanvas = topCanvasRef.current;
+            if (!topCanvas) return;
+            const ctx = topCanvas.getContext("2d");
+            if (!ctx) return;
+    
+            ctx.strokeStyle = lineColor;
+            ctx.lineWidth = lineWidth;
+    
+            const offset = getOffset(e);
+            ctx.lineTo(offset.x, offset.y);
+            ctx.stroke();
+    
+            updateCursor(offset);
+    
+            pathBuffer.current.push(offset);
+            sendDrawing(offset);
+        }
     };
 
     const drawShape = (
