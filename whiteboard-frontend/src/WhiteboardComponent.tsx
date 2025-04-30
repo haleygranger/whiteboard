@@ -86,31 +86,54 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
 
     // WebSocket Stuff
     useEffect(() => {
-        const queryParams = new URLSearchParams({
-            sessionId,
-            userId,
-        });
 
-        const webSocket = new WebSocket(`wss://it1jqs927h.execute-api.us-east-2.amazonaws.com/production?${queryParams}`);
+        const PING_INTERVAL = 30000;
+        let interval: NodeJS.Timeout;
+        let lastPongTime = Date.now();
+        let reconnectTimeout: NodeJS.Timeout;
+        let webSocket : WebSocket;
 
-        // ON CONNECTION
-        webSocket.onopen = () => {
-            console.log("WebSocket Connected");
-            webSocket.send(
-                JSON.stringify({
+        const connectWebSocket = () => {
+            const queryParams = new URLSearchParams({
+                sessionId,
+                userId,
+            });
+            webSocket = new WebSocket(`wss://it1jqs927h.execute-api.us-east-2.amazonaws.com/production?${queryParams}`);
+
+            // ON CONNECTION
+            webSocket.onopen = () => {
+                console.log("WebSocket Connected");
+                setWs(webSocket);
+                lastPongTime = Date.now();
+        
+                webSocket.send(JSON.stringify({
                     newUser: true,
                     sessionId: sessionId
-                })
-            )
-        };
+                }));
+        
+                if (interval) clearInterval(interval); // Clear previous interval if any
+                interval = setInterval(() => {
+                    if (webSocket.readyState === WebSocket.OPEN) {
+                        webSocket.send(JSON.stringify({ type: "ping" }));
+                        console.log("PING!");
+                        if (Date.now() - lastPongTime > 60000) {
+                            console.log("No PONG received. Closing connection.");
+                            webSocket.close();
+                        }
+                    }
+                }, PING_INTERVAL);
+            };
 
-        // ON NEW MESSAGE
+            // ON NEW MESSAGE
         webSocket.onmessage = (event) => {
-            console.log("Received WebSocket message:", event.data);
-
+            //console.log("Received WebSocket message:", event.data);
             try {
                 const data = JSON.parse(event.data);
                 // console.log("data: ", data);
+                if (data.type == "pong"){
+                    console.log("PONG!")
+                    lastPongTime = Date.now();
+                }
                 // DRAWING DATA
                 if (data.drawingData) {
                     // console.log("Received previous drawings:", data.drawingData);
@@ -167,11 +190,28 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
             }
         };
 
-        setWs(webSocket);
         // ON LEAVING - DISCONNECTION
-        return () => {
+        webSocket.onclose = () => {
+            console.warn("WebSocket closed. Attempting to reconnect...");
+            clearInterval(interval);
+            reconnectTimeout = setTimeout(() => {
+                connectWebSocket(); // Reconnect after delay
+            }, PING_INTERVAL);
+        };
+
+        // On ERROR - DISCONNECT
+        webSocket.onerror = (err) => {
+            console.error("WebSocket error", err);
             webSocket.close();
-            console.log("Websocket Disconnected");
+        };
+    };
+
+    connectWebSocket();
+    return () => {
+        if (interval) clearInterval(interval);
+        if (reconnectTimeout) clearTimeout(reconnectTimeout);
+        webSocket?.close();
+        console.log("WebSocket Disconnected");
         };
     }, [sessionId, userId]);
 

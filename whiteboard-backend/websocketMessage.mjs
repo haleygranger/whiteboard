@@ -31,6 +31,7 @@ const getConnections = async (sessionId) => {
 };
 
 const sendMessageToConnection = async (connectionId, message) => {
+  console.log("Sending message to connection:", connectionId, message);
   await apiGateway.send(
     new PostToConnectionCommand({
       ConnectionId: connectionId,
@@ -73,6 +74,11 @@ export const handler = async (event) => {
     if (!connectionId) throw new Error("Missing connectionId");
     const connections = await getConnections(sessionId);
 
+    // ----------------- PING PONG ---------------------
+    if (body.type === "ping") {
+      await sendMessageToConnection(connectionId, { type: "pong" });
+    }
+
     // ------------------- ERASE -----------------------
     if (body.erase) {
       const eraseMsg = {
@@ -80,14 +86,13 @@ export const handler = async (event) => {
         erase: true,
         userId: body.userId,
       };
-
+      console.log("Running erase.");
       // Delete all strokes in the session
       const oldDrawings = await dynamodb.send(new QueryCommand({
         TableName: WHITEBOARD_DRAWINGS,
         KeyConditionExpression: "sessionId = :sessionId",
         ExpressionAttributeValues: { ":sessionId": { S: sessionId } }
       }));
-
       for (const item of oldDrawings.Items || []) {
         await dynamodb.send(new DeleteItemCommand({
           TableName: WHITEBOARD_DRAWINGS,
@@ -211,9 +216,11 @@ export const handler = async (event) => {
 
     // ------------------- DRAWING -----------------------
     if (body.drawingData) {
+      console.log("Running Drawing.")
       const { userId, path, lineColor, lineWidth } = body.drawingData;
+      console.log("userId: " + userId + " path: " + path + " lineColor: " + lineColor + " lineWidth: " + lineWidth);
       const strokeId = `${userId}-${Date.now()}`;
-
+      console.log("strokeId created: " + strokeId);
       await dynamodb.send(new PutItemCommand({
         TableName: WHITEBOARD_DRAWINGS,
         Item: {
