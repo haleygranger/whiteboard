@@ -19,6 +19,7 @@ const Whiteboard: React.FC<WhiteboardProps> = ({ isAuth }) => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
 
+  // Checks that URL is all correct
   useEffect(() => {
     // Get sessionId from URL
     const urlSessionId = params.get("sessionId");
@@ -29,7 +30,6 @@ const Whiteboard: React.FC<WhiteboardProps> = ({ isAuth }) => {
     const urlUserId = params.get("userId");
     const storedUserId = localStorage.getItem("userId");
 
-    // DELETE
     if (!urlSessionId) {
         console.log("Getting here: !urlSessionId.")
         navigate("/GuestSignInSession");

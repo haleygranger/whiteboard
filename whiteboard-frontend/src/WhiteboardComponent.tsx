@@ -3,7 +3,7 @@ import Menu from "./Menu";
 import "./App.css";
 import { useNavigate } from "react-router-dom";
 
-// INTERFACE
+// TYPES
 export type DrawingData = 
     | {
         type: "drawing";
@@ -20,6 +20,7 @@ export type DrawingData =
         lineWidth?: number;
     };
 
+// INTERFACES
 interface MouseEventWithOffset extends React.MouseEvent<HTMLCanvasElement> {
     nativeEvent: MouseEvent;
 }
@@ -28,6 +29,7 @@ interface TouchEventWithOffset extends React.TouchEvent<HTMLCanvasElement> {
     nativeEvent: TouchEvent;
 }
 
+// PROPS
 interface WhiteboardProps {
     sessionId: string;
     userId: string;
@@ -62,6 +64,12 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
     const [ws, setWs] = useState<WebSocket | null>(null);
 
     // Initialization when the component mounts
+    /* 
+    Sets init info:
+        - Base and top canvas
+        - Pen color (Black)
+        - Pen size (8)
+    */
     useEffect(() => {
         const baseCanvas = baseCanvasRef.current;
         const topCanvas = topCanvasRef.current;
@@ -86,7 +94,6 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
 
     // WebSocket Stuff
     useEffect(() => {
-
         const PING_INTERVAL = 30000;
         let interval: NodeJS.Timeout;
         let lastPongTime = Date.now();
@@ -110,7 +117,8 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
                     newUser: true,
                     sessionId: sessionId
                 }));
-        
+
+                // PING PONG functionality
                 if (interval) clearInterval(interval); // Clear previous interval if any
                 interval = setInterval(() => {
                     if (webSocket.readyState === WebSocket.OPEN) {
@@ -125,18 +133,15 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
             };
 
             // ON NEW MESSAGE
-        webSocket.onmessage = (event) => {
-            //console.log("Received WebSocket message:", event.data);
+            webSocket.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
-                // console.log("data: ", data);
                 if (data.type == "pong"){
                     console.log("PONG!")
                     lastPongTime = Date.now();
                 }
                 // DRAWING DATA
                 if (data.drawingData) {
-                    // console.log("Received previous drawings:", data.drawingData);
                     updateCanvasFromServer(data.drawingData); // Call drawing function
                 }
                 // CURSOR DATA
@@ -166,7 +171,6 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
                     const selectedShapeNew = data.shapeData.type;
                     const lineWidthNew = data.shapeData.lineWidth;
                     const lineColorNew = data.shapeData.lineColor;
-                    // console.log(startPointNew, endNew, selectedShapeNew);
                     drawShape(startPointNew, endNew, selectedShapeNew, lineColorNew, lineWidthNew);
                     updateCanvasFromServer(data.shapeData);
                 }
@@ -215,6 +219,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
         };
     }, [sessionId, userId]);
 
+    // Drawing functionality and shapes preview
     const draw = (e: MouseEventWithOffset | TouchEventWithOffset): void => {
         if (selectedShape && startPoint) {
             const topCanvas = topCanvasRef.current;
@@ -276,21 +281,20 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
         }
     };
 
+    // Shape drawing functionality
     const drawShape = (
         start: { x: number; y: number },
         end: { x: number; y: number },
         shape: string,
         strokeColor:string,
         strokeWidth: number
-    ) => {
+        ) => {
         // If canvas doesnt exist - don't run
         if (!ctxRef.current) return;
         const ctx = ctxRef.current;
         
-        // Width = X
-        // Height = Y
-        const width = end.x - start.x;
-        const height = end.y - start.y;
+        const width = end.x - start.x; // Width = X coordinates
+        const height = end.y - start.y; // Height = Y coordinates
 
         ctx.beginPath();
         ctx.strokeStyle = strokeColor;
@@ -315,6 +319,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
         setIsShapesActive(false);
     };
 
+    // On end of drawing
     const endDrawing = (e?: MouseEventWithOffset | TouchEventWithOffset): void => {
         setIsDrawing(false);
 
@@ -326,8 +331,8 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
         const topCtx = topCanvas.getContext("2d");
 
         if (baseCtx && topCtx) {
-            baseCtx.drawImage(topCanvas, 0, 0);
-            topCtx.clearRect(0, 0, topCanvas.width, topCanvas.height);
+            baseCtx.drawImage(topCanvas, 0, 0); // Smoosh top drawing ontop of base drawing
+            topCtx.clearRect(0, 0, topCanvas.width, topCanvas.height); // Clear top drawing
             topCtx.closePath();
         }
 
@@ -364,6 +369,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
         pathBuffer.current = [];
     };
 
+    // Get the cursor position
     const getOffset = (e: MouseEventWithOffset | TouchEventWithOffset) => {
         const canvas = topCanvasRef.current;
         if (!canvas) return { x: 0, y: 0 };
@@ -385,6 +391,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
     };
     
 
+    // Clear the board and send this to API
     const handleFullErase = () => {
         if (ws) {
             // Send erase event to WebSocket server
@@ -411,6 +418,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
         }
     };
 
+    // Send userId and sessionId to API to save whiteboard info
     const handleSave = async () => {
         if (isAuth){
             try {
@@ -447,6 +455,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
         }
     };
 
+    // Navigate to loading screen
     const handleLoad = async () =>{
         if (isAuth){
             navigate(`/load-saved-boards?sessionId=${sessionId}&userId=${encodeURIComponent(userId)}`);
@@ -456,6 +465,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
         }
     }
 
+    // Sends drawing information to API
     const sendDrawing = (offset: {x: number; y: number;}) =>
         {
             updateCursor(offset);
@@ -481,6 +491,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
             }
         }
 
+    // Get offset and being drawing functionality
     const startDrawing = (e: MouseEventWithOffset | TouchEventWithOffset): void => {
         const offset = getOffset(e);
         updateCursor(offset);
@@ -505,6 +516,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
         }
     };
 
+    // Change the cursor position
     const updateCursor = (position: { x: number; y: number }) => {
         cursorPositionRef.current = position;
         if (cursorRef.current) {
@@ -513,6 +525,7 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
         }
     };
 
+    // Get the message from the (WebSocket) API and handle it. It handles freehand and shapes.
     const updateCanvasFromServer = (drawingUsers: DrawingData[]) => {
         // console.log("Drawing data", drawingUsers);
         const baseCanvas = baseCanvasRef.current;

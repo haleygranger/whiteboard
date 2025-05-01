@@ -28,6 +28,7 @@ const Loadboards: React.FC = () => {
         }
     }, [userId]);
 
+    // Sends userId to API to get all saved whiteboards
     const getSavedWhiteboards = async () => {
         try {
             setLoading(true);
@@ -53,10 +54,12 @@ const Loadboards: React.FC = () => {
         }
     };
 
+    // Navigates back to session
     const handleBack = () => {
         navigate(`/whiteboard?sessionId=${sessionId}&userId=${encodeURIComponent(userId)}`);
     };
     
+    // Sends sessionId to API to delete session from db
     const handleDelete = async () => {
         if (selectedWhiteboard) {
             const requestBody = { sessionId: selectedWhiteboard }; // <-- fix here
@@ -83,6 +86,7 @@ const Loadboards: React.FC = () => {
         }
     };
 
+    // Sends sessionId to API to restore the session
     const handleOpen = async () => {
         // console.log("selectedWhiteboard: " + selectedWhiteboard);
         if (selectedWhiteboard) {
@@ -119,6 +123,7 @@ const Loadboards: React.FC = () => {
         }
     };
 
+    // Handles change to radio buttons
     const handleRadioChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setSelectedWhiteboard(event.target.value);
     };

@@ -33,17 +33,17 @@ const Menu: React.FC<MenuProps> = ({ setLineColor, setLineWidth, sessionId, hand
         { label: "large", value: 15 },
     ];
 
+    // Handles changing the color
     const handleColor = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setIsEraserActive(false);
-        setIsShapesActive(false);
-        setLineColor(e.target.value)
+        setIsEraserActive(false); // Removed eraser highlight
+        setLineColor(e.target.value) // Sets color to color picked
     }
 
     const handleEraser = () => {
-        setLineColor("white"); 
-        setActiveShape(null);
-        setIsEraserActive(true);
-        setIsShapesActive(false);
+        setLineColor("white"); // Sets color to white (erase)
+        setActiveShape(null); // Removes active shape
+        setIsShapesActive(false); // Removes eraser highlight
+        setIsEraserActive(true); // Adds eraser highlight
     };
 
     // Function to generate a shareable URL and display the QR code inside the modal
@@ -109,19 +109,21 @@ const Menu: React.FC<MenuProps> = ({ setLineColor, setLineWidth, sessionId, hand
         });
     };
 
+    // Changes the size of the cursor 
     const handleSizeClick = (value: number) => {
-        setLineWidth(value);
-        setSelectedWidth(value);
-        setIsEraserActive(false);
+        setLineWidth(value); // Set the value
+        setSelectedWidth(value); // Highlights line width
     };
 
+    // Selects the shape from dropdown
     const selectShape = (shape: string) => {
-        setIsShapesActive(true);
-        setSelectedShape(shape);
-        setActiveShape(shape);
-        setShowShapeMenu(false);
+        setIsShapesActive(true); // Highlights shape
+        setSelectedShape(shape); // Selects the shape
+        setActiveShape(shape); // Highlights the shape
+        setShowShapeMenu(false); // Toggle shape menu
     };
 
+    // Displays or hides shapes dropdown
     const toggleShapeMenu = () => {
         setShowShapeMenu(prev => !prev);
     }
