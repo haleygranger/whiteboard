@@ -369,23 +369,27 @@ const WhiteboardComponent: React.FC<WhiteboardProps> = ({ sessionId, userId, isA
         pathBuffer.current = [];
     };
 
-    // Get the cursor position
     const getOffset = (e: MouseEventWithOffset | TouchEventWithOffset) => {
         const canvas = topCanvasRef.current;
         if (!canvas) return { x: 0, y: 0 };
     
         const rect = canvas.getBoundingClientRect();
     
-        if ("touches" in e.nativeEvent) {
-            const touch = e.nativeEvent.touches[0];
+        if ("touches" in e.nativeEvent || "changedTouches" in e.nativeEvent) {
+            const nativeTouch = e.nativeEvent as TouchEvent;
+            const touchList = nativeTouch.touches.length > 0
+                ? nativeTouch.touches
+                : nativeTouch.changedTouches;
+            const touch = touchList[0];
             return {
                 x: touch.clientX - rect.left,
                 y: touch.clientY - rect.top,
             };
         } else {
+            const mouse = e.nativeEvent as MouseEvent;
             return {
-                x: e.nativeEvent.clientX - rect.left,
-                y: e.nativeEvent.clientY - rect.top,
+                x: mouse.clientX - rect.left,
+                y: mouse.clientY - rect.top,
             };
         }
     };
