@@ -8,6 +8,7 @@ import "./App.css";
 const userPoolClientId = import.meta.env.VITE_COGNITO_CLIENT_ID;
 const userPoolId = import.meta.env.VITE_COGNITO_USER_POOL_ID;
 
+// Configure Information
 Amplify.configure({
   Auth: {
     Cognito: {
@@ -37,9 +38,8 @@ function SignIn({ setAuthStatus }: { setAuthStatus: (auth: boolean) => void }) {
   const [loading, setLoading] = useState(true);
   const [navigating, setNavigating] = useState(false);
 
-
+  // Ensure no one is signed in on load
   useEffect(() => {
-    // Ensure no one is signed in on load
     const ensureLoggedOut = async () => {
       try {
         await signOut();
@@ -53,8 +53,8 @@ function SignIn({ setAuthStatus }: { setAuthStatus: (auth: boolean) => void }) {
     ensureLoggedOut();
   }, []);
 
+  // Check if user is authenticated AFTER login redirect
   useEffect(() => {
-    // Check if user is authenticated AFTER login redirect
     const checkAuth = async () => {
       try {
         const user = await getCurrentUser();
@@ -72,6 +72,7 @@ function SignIn({ setAuthStatus }: { setAuthStatus: (auth: boolean) => void }) {
     checkAuth();
   }, []);
 
+  // Create sessions with API
   const createConnection = async () => {
     const response = await fetch("https://qdeqrga8ac.execute-api.us-east-2.amazonaws.com/create-session", {
       method: "POST",
@@ -82,10 +83,12 @@ function SignIn({ setAuthStatus }: { setAuthStatus: (auth: boolean) => void }) {
     return data.sessionId;
   };
 
+  // Navigates to Guest sign in
   const handleGuestClick = async () => {
     navigate(`/GuestSignIn`);
   };
 
+  // Handles sign in
   const handleSignIn = async () => {
     try {
       console.log("Redirecting to Cognito...");
